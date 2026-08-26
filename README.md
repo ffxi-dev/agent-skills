@@ -41,6 +41,7 @@ per-agent copies.
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
 | [`ffxi-wiki`](skills/ffxi-wiki/) | Looking up FFXI game data across the three community wikis. |
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
+| [`ffxi-resources`](skills/ffxi-resources/) | Trusted client-extracted values: message/item IDs, event bytecode, abilities. |
 
 Pairs well with [orwell-writing](https://github.com/tamdogood/builder-essential-skills/blob/main/skills/orwell-writing/SKILL.md)
 (MIT, installed separately), which `lsb-docs` defers to for sentence mechanics.
