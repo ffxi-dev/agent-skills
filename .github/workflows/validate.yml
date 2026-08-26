@@ -1,0 +1,42 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install skills-ref mypy
+
+      - name: Validate every skill against the Agent Skills spec
+        run: |
+          shopt -s nullglob
+          found=0
+          for skill in skills/*/; do
+            found=1
+            echo "::group::$skill"
+            agentskills validate "$skill"
+            echo "::endgroup::"
+          done
+          if [ "$found" = 0 ]; then echo "no skills yet"; fi
+
+      - name: Type check
+        run: mypy --strict .
+
+      - name: Run tests
+        run: |
+          shopt -s nullglob globstar
+          found=0
+          for test in **/test_*.py; do
+            found=1
+            echo "::group::$test"
+            ( cd "$(dirname "$test")" && python "$(basename "$test")" )
+            echo "::endgroup::"
+          done
+          if [ "$found" = 0 ]; then echo "no tests yet"; fi
