@@ -37,6 +37,7 @@ per-agent copies.
 | [`lsb-exploit`](skills/lsb-exploit/) | Checking a packet handler, binding, or event script for client-trust holes. |
 | [`lsb-tests`](skills/lsb-tests/) | Writing and running LSB tests, and diagnosing flakes. |
 | [`lsb-build`](skills/lsb-build/) | Building the server on Windows, Linux, or macOS. |
+| [`lsb-profile`](skills/lsb-profile/) | Profiling the server with Tracy to find hotspots. |
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
 | [`ffxi-wiki`](skills/ffxi-wiki/) | Looking up FFXI game data across the three community wikis. |
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
