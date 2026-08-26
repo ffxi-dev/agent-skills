@@ -1,0 +1,14 @@
+This repository is licensed under the MIT License (see LICENSE).
+
+POL1 (PlayOnline) packing format
+--------------------------------
+skills/ffxi-re/xibin.py contains an implementation of Square Enix's POL1 packing
+format (the LZSS-based protection on FFXiMain.dll, pol.exe, polcore.dll and related
+PlayOnline modules), in the function lzss_pol1. Credit for publicly documenting this
+format goes to atom0s, whose write-up "Unpacking FFXi Files For Static Analysis"
+(2015) is the clearest public description of it.
+
+This implementation was written from atom0s's public description of the format's
+observable behaviour and validated byte-exact against packed/unpacked oracle files,
+rather than translated from any copyrighted source - a clean-room reimplementation.
+The attribution is kept in the lzss_pol1 docstring alongside this notice.
