@@ -61,11 +61,11 @@ Reviewing order:
   checkboxes).
 - **Do not re-request review after every push**; do not reply to every single comment, just address
   them.
-- **AI usage must be disclosed**, including for the PR description. Undisclosed AI-shaped prose,
-  AI-generated explanations of your own PR, or long generated write-ups get the PR closed without
-  discussion. If you cannot explain the change in your own words, don't submit it. See
-  `docs/ai_agents/README.md`. Disclosure is prose in the PR body; it is never a git co-author
-  trailer, which `lsb-commits` bans outright.
+- **Slop gets closed without discussion.** Per `docs/ai_agents/README.md`, a contribution that
+  looks vibe-coded without proper oversight is closed without further comment. If you cannot
+  explain the change in your own words, don't submit it. Separately, that doc requires you to
+  disclose clearly when captures were not used. Never add an AI co-author git trailer, which
+  `lsb-commits` bans outright.
 - Untested PRs get moved to draft. Say what you tested and how.
 - Security-sensitive findings go to a maintainer privately, never in a public PR/issue.
 
@@ -80,8 +80,8 @@ Reviewing order:
 - Previous LSB/DSP implementations are not evidence either - they are often guessed or half-done.
 - If the capture is not yours, say so and credit the capturer.
 - Guessed or unverified values must carry the exact marker `-- Capture needed`, with no
-  parenthetical. Over 400 rows under `sql/` use it and tooling greps for the literal string, so
-  a `TODO` comment saying the same thing will never be found.
+  parenthetical. Over 400 rows under `sql/` use it, so it is the greppable convention; a `TODO`
+  comment saying the same thing is invisible to anyone searching for the real marker.
 - **Don't default to assuming LSB is wrong.** If our capture shows X and yours doesn't, that is a
   reason to investigate, not to delete our data.
 - Mob spawn positions: use the captured decimals verbatim, never round. Mark uncaptured positions

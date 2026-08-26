@@ -62,8 +62,8 @@ LSB documentation, and it is invisible to the person writing it.
 ## Mark what you do not know
 
 Placeholder and unverified rows carry the exact marker `-- Capture needed`, with no
-parenthetical. Over 400 rows under `sql/` already use it and tooling greps for the literal
-string.
+parenthetical. Over 400 rows under `sql/` already use it, so keep the string exact and
+greppable rather than inventing a variant.
 
 In prose, state plainly what is unverified instead of hedging every sentence. A short
 "Unverified:" note beats "may possibly sometimes".

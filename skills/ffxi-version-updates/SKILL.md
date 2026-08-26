@@ -31,7 +31,7 @@ head -1 notes/INDEX.md
 # -> 2214 notes, oldest 2002-07-09, newest 2026-08-18
 ```
 
-If that fails, build it. One command, a couple of minutes, mostly a 20MB download:
+If that fails, build it. One command, a couple of minutes, mostly a 30MB download:
 
 ```bash
 python build.py

@@ -40,7 +40,7 @@
 - Don't drop unused function parameters from a signature.
 - Keep parameters non-optional rather than 2-or-3-arg variants; people copy the worst example.
 - **No naked bool flags** in signatures or parameter lists. Use an enum with true/false values, or a
-  named-field table. Same for `xi.tradeFinished.*`-style flag sets.
+  named-field table, rather than a positional list of naked booleans.
 
 ### Data
 - **Tables over if/elseif chains**, always. If a table already exists in the file, extend it rather
@@ -140,4 +140,4 @@
   ```
 - Trailing comma on the last table entry. Newline at end of file. No stray blank lines, no
   whitespace padding, no double indentation.
-- New globals must be registered in `.vscode/settings.json` and `lua.sh`.
+- New globals must be registered in `.vscode/settings.json` and `tools/ci/sanity_checks/lua.sh`.

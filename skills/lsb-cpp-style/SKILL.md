@@ -7,21 +7,24 @@ license: MIT
 # LSB C++ style
 
 Applies to C++ you write or touch. Do not churn existing code to match: the codebase
-predates most of these rules (`src/map` alone has over a thousand ternaries). Fix what you
+predates most of these rules (`src/map` alone has over 750 ternaries). Fix what you
 are already editing, leave the rest.
 
 Three sources, no overlap:
 
 - **This skill**: the rules below. It covers writing C++. For reviewing a diff, the
-  `lsb-pr-review` skill adds the LSB-specific checks (entity casts, `db::preparedStmt`,
-  `modifier.h` ids, logging, IPC) and defers general style back here.
+  `lsb-pr-review` skill adds the LSB-specific checks (entity casts, `db::preparedStmt`, the
+  `Mod::` enum, logging, IPC) and defers general style back here.
 - **[Development Guide](https://github.com/LandSandBoat/server/wiki/Development-Guide)**:
   naming, casting, exceptions, formatting rationale, plus the Lua/SQL/Python conventions.
-- **Repo `CLAUDE.md`**: trailing return types, blank line after a closing brace, `member_`
-  naming with an accessor named `member()`.
+
+Three more conventions for new code, not in the guide: trailing return types (already common,
+1200+ uses), a blank line after a closing brace, and `member_` with an accessor named
+`member()`. The last is the newer convention; older code still uses the `m_Name` prefix, so
+match the file you are in rather than churning it.
 
 Formatting is not your job. `.clang-format` owns it, and `tools/run_clang_format.py`
-enforces it (clang-format 22+). Run it before you consider an edit done.
+enforces it (clang-format 22 exactly; it rejects other versions). Run it before you consider an edit done.
 
 ## Comments
 

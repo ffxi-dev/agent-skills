@@ -8,7 +8,7 @@
 Upstream (github.com/Frankie-hz/ffxiupdates, MIT) already enumerates every official
 news id and crawls both the EN and JA version update subforums, so this only filters
 its records and renders them to one plain text file per update per language. Grepping
-6000 single-line JSON records full of HTML is miserable; a file per update makes the
+12500 single-line JSON records full of HTML is miserable; a file per update makes the
 date and language of every hit free.
 """
 

@@ -3,16 +3,17 @@
 Destined for the root of `LandSandBoat/server` as `CLAUDE.md`. Not named `CLAUDE.md` here
 so it does not load as instructions while working in this repo.
 
-It supersedes the three rule file currently in the server repo, folding those rules in.
+The server repo already ships `AGENTS.txt` and `.github/copilot-instructions.md`, both short
+pointers to `docs/ai_agents/README.md`. This file folds the actual rules in; decide on push
+whether it replaces or complements them.
 
 **Constraint:** this file is always-on context for every session in the server repo,
 including Lua, SQL and YAML work that will never touch C++. Every line is paid for on every
 task. Keep it terse. Rationale, worked examples and anything long belongs in the
 `lsb-cpp-style` skill, which loads only when it is relevant.
 
-**On push:** rename to `CLAUDE.md`, and add an `AGENTS.md` alongside it so Codex reads the
-same rules. Decide then whether `AGENTS.md` is the real file with `CLAUDE.md` pointing at
-it, or two copies.
+**On push:** rename to `CLAUDE.md`. The repo's `AGENTS.txt` already serves Codex, so either
+point it at this file or fold this content into it, rather than adding a competing `AGENTS.md`.
 
 ---
 

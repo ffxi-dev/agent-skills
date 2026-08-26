@@ -8,7 +8,7 @@
   only in the simplest cases, and never confirm one type then cast to another.
 - If a container is constructed with a back-pointer to its owner, that owner is always valid -
   don't paper over a lifetime bug with a null check.
-- `std::optional` / `xi::optional` / `Maybe<T>` for "might not exist", and name it `maybeThing`.
+- `std::optional` / `Maybe<T>` for "might not exist", and name it `maybeThing`.
   Check with `has_value()`. Don't default-construct a sentinel.
 - Prefer `enum class` with our `uint8`/`uint16` aliases over naked bools and raw ints; entries don't
   repeat the enum's name. For boolean-ish parameters use a strongly-typed flag (`xi::Flag<Tag>`)
@@ -38,7 +38,7 @@ What is left for a reviewer, because no tool catches it:
 - `!container.empty()` over `size() > 0`. Structured bindings over `.first`/`.second`.
   `std::ranges::any_of` and friends over hand-rolled loops. `starts_with` over manual compares.
 - Invert and early-return instead of wrapping a whole function in an `if`.
-- Don't erase while iterating with raw iterators; collect and remove, or use an `eraseIf` helper.
+- Don't erase while iterating with raw iterators; use `std::erase_if`.
 - Constants go in an anonymous namespace at the top of the `.cpp`, not rebuilt per call. Same for
   lookup maps.
 - All DB access via `db::preparedStmt`, with the query defined inline and arguments vertically
@@ -48,7 +48,8 @@ What is left for a reviewer, because no tool catches it:
 - IPC: target the process that needs the message; broadcasting to all processes is a last resort.
 - If a function is expensive (zone-wide iteration), say so in the name.
 - Header declarations must match the definition you changed.
-- Update the "next free ID" comment in `modifier.h` when adding or freeing a `Mod::`.
+- Add `Mod::` entries to `data/enums/mod.yaml` and update the `SPARE IDs:` comment at the bottom
+  when adding or freeing one. (Mods moved out of `modifier.h` to the YAML enum.)
 - Core enums should mirror the Lua enum names and casing so the two are greppable together.
 - Message enums are named for what the message says (`LevelSyncActivated`), never with the numeric
   ID baked into the name.

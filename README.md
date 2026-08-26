@@ -163,8 +163,9 @@ reliable, point at it from an always-loaded file rather than duplicating it:
 C++ changes follow the `lsb-cpp-style` skill. Load it before editing any .cpp/.h.
 ```
 
-Put that in the server repo's `CLAUDE.md` and `AGENTS.md`. Two lines, near-zero context
-cost, works for both agents, and keeps one source of truth.
+Put that in the server repo's agent-instruction files: it ships `AGENTS.txt` and
+`.github/copilot-instructions.md` (both currently just point at `docs/ai_agents/README.md`).
+Two lines, near-zero context cost, works for both agents, and keeps one source of truth.
 
 ## Ground rules
 
@@ -193,15 +194,15 @@ cost, works for both agents, and keeps one source of truth.
     had passed the unit tests and only showed up against the real tree.
   - **Test what fails silently.** Anything that transforms data earns tests, because a parser
     that quietly mangles its output produces a corpus nobody knows is wrong. Code that either
-    works or visibly does not, and that is safe to re-run, is worth less: `fetch.py` in
-    `ffxi-version-updates` is untested on purpose, since a failed download is loud, idempotent,
+    works or visibly does not, and that is safe to re-run, is worth less: the download path in
+    `ffxi-version-updates/build.py` leans on this, since a failed download is loud, idempotent,
     and fixed by running it again.
   - **Prose only skills** have nothing to execute, so the obligation is verification instead.
     Every factual claim is checked against the source before it ships: run the command, open
     the path, resolve the link, count the rows. Re-check them when you touch the skill, since
     claims rot silently. A skill that confidently names a flag that has since been renamed is
     worse than no skill, because it will be believed.
-- One source of truth. If the wiki or the server repo's `CLAUDE.md` already states a rule,
+- One source of truth. If the wiki or the server repo's agent-instruction files already state a rule,
   link it, do not restate it. Copies drift silently and a reader cannot tell which is
   current.
 - The description is the loading contract. It is all an agent sees before deciding, so name

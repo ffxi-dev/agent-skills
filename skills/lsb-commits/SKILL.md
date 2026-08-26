@@ -11,8 +11,9 @@ license: MIT
 Do not add a Claude, AI, or agent co-author trailer to a commit or PR. Use the repo's
 configured git identity, and never pass `-c user.name` or `-c user.email`.
 
-This is not the same as disclosure. LandSandBoat requires AI usage to be disclosed as prose in
-the PR body, and `lsb-pr-review` covers that. Disclose there, never in a trailer.
+A co-author trailer is not the same as oversight. LandSandBoat closes contributions that read
+as vibe-coded slop without oversight (`lsb-pr-review` covers the standard); the fix is doing and
+understanding the work, never a trailer advertising who wrote it.
 
 ## Message
 
@@ -33,6 +34,8 @@ obvious.
 Avoid a body unless the title genuinely cannot carry the why. Do not add one by default.
 
 No emdash or other ligatures in the title or body.
+
+CI hard-fails a title under 10 characters, over 72, or containing a `|` (`tools/ci/sanity_checks/git.py`).
 
 ## Branch structure
 
