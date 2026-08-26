@@ -47,7 +47,8 @@ Writes `<out>/<group>.png` and prints each path. Roughly 15 seconds for one zone
 loading and decompressing the mesh, so points in the same zone are cheapest batched into one
 call.
 
-Options: `--repo` for the checkout (else `$XI_VISUALIZER`, else a few usual paths),
+Options: `--repo` for the checkout (else `$XI_VISUALIZER`, else the current dir or a sibling
+`xi-visualizer`; anywhere else it clones one),
 `--scale` for pixel ratio (default 2), `--dry-run` to validate and resolve zone names without
 starting a browser.
 

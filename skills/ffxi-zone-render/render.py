@@ -27,11 +27,11 @@ REQUIRED_COORDS = ("x", "y", "z")
 
 REPO_URL = "https://github.com/sruon/xi-visualizer.git"
 
+# Layout-agnostic only: the current dir and a sibling checkout. Anywhere else, pass --repo
+# or set XI_VISUALIZER; the author's home directory is not a place to guess.
 SEARCH_PATHS = (
     "xi-visualizer",
     "../xi-visualizer",
-    "~/Documents/GitHub/xi-visualizer",
-    "~/src/xi-visualizer",
 )
 
 
@@ -61,7 +61,7 @@ def find_repo(explicit: str | None) -> Path:
         if (root / "scripts" / "shot.mjs").is_file():
             return root.resolve()
 
-    return clone(Path(SEARCH_PATHS[2]).expanduser())
+    return clone(Path("xi-visualizer"))
 
 
 # project-local setup is ours to do; language runtimes are not. Installing node or git on
