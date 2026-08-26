@@ -174,6 +174,11 @@ cost, works for both agents, and keeps one source of truth.
 - AI agents suggesting changes to existing skills is fine.
 - A human opens and owns the PR. Agent authorship needs no attribution, but nobody merges
   work they have not read.
+- **Commits here use Conventional Commits** (`feat:`, `fix:`, `ci:`, `docs:`), because
+  release-please reads them to bump the plugin version. A commit without a recognised prefix
+  ships no release, and Claude Code caches an installed plugin by version, so the change
+  reaches nobody. This is not the LandSandBoat convention: `lsb-commits` describes the server
+  repo's bracket tags, which apply there and not here.
 - Check the skill index before adding. A second skill covering the same trigger splits the
   description space and makes both load less reliably.
 

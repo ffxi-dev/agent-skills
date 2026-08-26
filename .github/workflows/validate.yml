@@ -40,3 +40,4 @@ jobs:
             echo "::endgroup::"
           done
           if [ "$found" = 0 ]; then echo "no tests yet"; fi
+
