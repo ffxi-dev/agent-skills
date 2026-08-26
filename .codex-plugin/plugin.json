@@ -1,6 +1,6 @@
 {
   "name": "lsb-agents-skills",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Agent Skills for working on LandSandBoat: review, conventions, data formats, and packet/capture workflows.",
   "skills": "./skills/",
   "hooks": "./hooks/lsb-hooks.json"
