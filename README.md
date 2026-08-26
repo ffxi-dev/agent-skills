@@ -131,7 +131,12 @@ pip install skills-ref mypy
 agentskills validate skills/<skill-name>   # frontmatter
 mypy --strict skills/<skill-name>           # types (per skill: two skills share a build.py basename)
 python hooks/test_lsb_cpp_check.py         # or: pytest
+python tools/gen_skill_readmes.py          # regenerate the per-folder README.md
 ```
+
+Each skill folder has a `README.md` generated from its `SKILL.md` frontmatter, so GitHub shows
+a summary when you open the folder. Do not edit it by hand; change `SKILL.md` and rerun the
+generator (CI fails if it is stale).
 
 Tests live next to what they test as `test_*.py`, run under pytest or standalone, and CI
 picks them up by glob.
