@@ -33,8 +33,8 @@ do this: it buries real changes and makes review harder.
 
 - Trailing return types: `auto foo() -> uint8`, not `uint8 foo()`. Not on `void`.
 - Blank line after the closing `}` of an `if`/`else`/`for`/`while`/`switch`.
-- Private and protected members take a trailing underscore, with an accessor without one:
-  `member_` and `member()`.
+- Private and protected members take a trailing underscore: `member_`, getter `member()`,
+  setter `setMember()`. Preferred going forward; older `m_Name` members exist, match the file.
 - Default to no comments. When one is warranted, keep it to a single line covering only what
   is not obvious. Never restate the code.
 - Be as `const`, `const auto` and `constexpr` as possible.
