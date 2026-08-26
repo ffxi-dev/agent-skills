@@ -17,12 +17,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 REQUIRED_COORDS = ("x", "y", "z")
+
+REPO_URL = "https://github.com/sruon/xi-visualizer.git"
 
 SEARCH_PATHS = (
     "xi-visualizer",
@@ -37,8 +40,20 @@ class RenderError(Exception):
 
 
 def find_repo(explicit: str | None) -> Path:
-    candidates = [explicit] if explicit else list(SEARCH_PATHS)
-    if not explicit and os.environ.get("XI_VISUALIZER"):
+    """Locate a checkout, cloning one only when the caller did not name a path.
+
+    An explicit --repo that is wrong is a mistake to report, never a reason to go and
+    clone somewhere else behind the caller's back.
+    """
+    if explicit:
+        root = Path(explicit).expanduser()
+        if not (root / "scripts" / "shot.mjs").is_file():
+            raise RenderError(f"{root} is not an xi-visualizer checkout (no scripts/shot.mjs)")
+
+        return root.resolve()
+
+    candidates = list(SEARCH_PATHS)
+    if os.environ.get("XI_VISUALIZER"):
         candidates.insert(0, os.environ["XI_VISUALIZER"])
 
     for candidate in candidates:
@@ -46,25 +61,83 @@ def find_repo(explicit: str | None) -> Path:
         if (root / "scripts" / "shot.mjs").is_file():
             return root.resolve()
 
-    raise RenderError(
-        "no xi-visualizer checkout found. Pass --repo, or set XI_VISUALIZER.\n"
-        "  git clone <xi-visualizer> && cd xi-visualizer\n"
-        "  git submodule update --init public/ximeshes   # 150MB of zone meshes, required\n"
-        "  pnpm install"
-    )
+    return clone(Path(SEARCH_PATHS[2]).expanduser())
+
+
+# project-local setup is ours to do; language runtimes are not. Installing node or git on
+# someone's machine unasked is not a thing a skill should decide to do.
+RUNTIMES = {
+    "git": "https://git-scm.com/downloads",
+    "node": "https://nodejs.org (v24 or newer)",
+}
+
+
+def preflight() -> None:
+    """Report every missing runtime at once, not one per failed run."""
+    missing = [f"  {name}: {where}" for name, where in RUNTIMES.items() if not shutil.which(name)]
+    if missing:
+        listed = "\n".join(missing)
+        raise RenderError(f"missing required tools, install these first:\n{listed}")
+
+
+def pnpm_command() -> list[str]:
+    """pnpm if installed, else let node provide it rather than making that the user's problem."""
+    if shutil.which("pnpm"):
+        return ["pnpm"]
+
+    if shutil.which("corepack"):
+        return ["corepack", "pnpm"]
+
+    return ["npx", "--yes", "pnpm"]
+
+
+def run(command: list[str], cwd: Path | None = None, what: str = "") -> None:
+    print(f"  {' '.join(command)}", file=sys.stderr)
+    try:
+        result = subprocess.run(command, cwd=cwd)
+    except FileNotFoundError:
+        raise RenderError(f"{command[0]} is not installed, and {what or 'setup'} needs it")
+
+    if result.returncode != 0:
+        raise RenderError(f"{what or ' '.join(command[:2])} failed (exit {result.returncode})")
+
+
+def clone(dest: Path) -> Path:
+    """No checkout anywhere, so make one. Better than handing back instructions."""
+    print(f"no xi-visualizer checkout found, cloning into {dest}", file=sys.stderr)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    run(["git", "clone", REPO_URL, str(dest)], what="clone")
+    return dest.resolve()
+
+
+def missing_prerequisites(root: Path) -> list[str]:
+    """What is not ready, without touching anything. Kept separate so it is testable."""
+    missing = []
+    if not any((root / "public" / "ximeshes").glob("*.ximesh")):
+        missing.append("meshes")
+
+    if not (root / "node_modules" / "puppeteer-core").is_dir():
+        missing.append("deps")
+
+    return missing
 
 
 def check_prerequisites(root: Path) -> None:
-    meshes = root / "public" / "ximeshes"
-    if not any(meshes.glob("*.ximesh")):
-        raise RenderError(
-            f"{meshes} has no .ximesh files. The submodule is not initialised, so every zone\n"
-            "will fail to load:\n"
-            f"  git -C {root} submodule update --init public/ximeshes"
-        )
+    """Bring the checkout up to a state that can render, rather than reporting on it."""
+    missing = missing_prerequisites(root)
 
-    if not (root / "node_modules" / "puppeteer-core").is_dir():
-        raise RenderError(f"dependencies are not installed:\n  cd {root} && pnpm install")
+    if "meshes" in missing:
+        print("zone meshes missing, fetching the submodule (150MB, one time)", file=sys.stderr)
+        run(["git", "submodule", "update", "--init", "public/ximeshes"], cwd=root,
+            what="submodule fetch")
+
+    if "deps" in missing:
+        print("dependencies missing, installing", file=sys.stderr)
+        run([*pnpm_command(), "install"], cwd=root, what="pnpm install")
+
+    still = missing_prerequisites(root)
+    if still:
+        raise RenderError(f"setup ran but {root} still lacks: {', '.join(still)}")
 
 
 def load_zones(root: Path) -> dict[str, int]:
@@ -151,7 +224,13 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
+        if not args.dry_run:
+            preflight()
+
         root = find_repo(args.repo)
+        if not args.dry_run:
+            check_prerequisites(root)
+
         zones = load_zones(root)
 
         raw = sys.stdin.read() if args.points == "-" else Path(args.points).read_text(encoding="utf-8")
@@ -161,7 +240,6 @@ def main() -> int:
             print(json.dumps(points, indent=2))
             return 0
 
-        check_prerequisites(root)
         written = render(root, points, args.out, args.scale)
     except RenderError as error:
         print(f"error: {error}", file=sys.stderr)

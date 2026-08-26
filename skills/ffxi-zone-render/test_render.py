@@ -121,28 +121,29 @@ def test_finds_a_repo_from_the_environment() -> None:
             del os.environ["XI_VISUALIZER"]
 
 
-def test_missing_repo_explains_how_to_get_one() -> None:
+def test_an_explicit_repo_that_is_wrong_is_an_error_not_a_clone() -> None:
+    """--repo naming the wrong place must never trigger a clone somewhere else."""
     with tempfile.TemporaryDirectory() as tmp:
         try:
             render.find_repo(tmp)
         except render.RenderError as error:
-            assert "submodule update --init" in str(error), "must name the 150MB prerequisite"
+            assert "not an xi-visualizer checkout" in str(error)
             return
 
         raise AssertionError("expected RenderError")
 
 
-def test_uninitialised_submodule_is_reported_before_the_browser_starts() -> None:
+def test_reports_what_setup_is_missing_without_touching_anything() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        (root / "public" / "ximeshes").mkdir(parents=True)
-        try:
-            render.check_prerequisites(root)
-        except render.RenderError as error:
-            assert "submodule" in str(error)
-            return
+        assert render.missing_prerequisites(root) == ["meshes", "deps"]
 
-        raise AssertionError("expected RenderError")
+        (root / "public" / "ximeshes").mkdir(parents=True)
+        (root / "public" / "ximeshes" / "West_Ronfaure.ximesh").write_bytes(b"")
+        assert render.missing_prerequisites(root) == ["deps"]
+
+        (root / "node_modules" / "puppeteer-core").mkdir(parents=True)
+        assert render.missing_prerequisites(root) == []
 
 
 def test_zone_table_is_read_from_the_checkout() -> None:

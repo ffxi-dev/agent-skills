@@ -8,7 +8,7 @@ description: >
   on the map. Takes a zone and a list of x/y/z points and returns an image. It does not
   know or care where the points came from.
 license: MIT
-compatibility: Requires an xi-visualizer checkout with its ximeshes submodule, Node 24+, pnpm, and Python 3.9+.
+compatibility: Requires git and Node 24+ on PATH, plus Python 3.9+. Clones the xi-visualizer renderer and fetches its 150MB mesh submodule on first run.
 ---
 
 # Render points on a zone map
@@ -75,17 +75,17 @@ than working around them silently:
 
 ## First run
 
-The renderer lives in the xi-visualizer repo, which this skill drives but does not contain.
+Nothing to set up by hand. `render.py` finds an xi-visualizer checkout, or clones one, fetches
+the 150MB `ximeshes` submodule, and runs `pnpm install`, doing only the parts that are missing.
+First run therefore takes a few minutes; later runs are about 15 seconds.
 
-```bash
-git clone <xi-visualizer> && cd xi-visualizer
-git submodule update --init public/ximeshes   # 150MB of zone meshes, mandatory
-pnpm install
-export XI_VISUALIZER=$PWD
-```
+Point it at an existing checkout with `--repo`, or `$XI_VISUALIZER`, to skip the search. An
+explicit `--repo` that is not a checkout is an error rather than a reason to clone elsewhere.
 
-Without the submodule every zone silently fails to load. `render.py` checks for it up front
-and says so, rather than letting the browser wait two minutes for a mesh that is not there.
+It needs `git` and `node` on PATH and will not install either: project dependencies are its
+business, language runtimes on your machine are not. Both are checked up front, so a missing
+one is named immediately rather than surfacing partway through setup. `pnpm` is not required
+separately; if it is absent, node supplies it through corepack or `npx`.
 
 ## When it fails
 
