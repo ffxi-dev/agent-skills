@@ -42,6 +42,7 @@ per-agent copies.
 | [`ffxi-wiki`](skills/ffxi-wiki/) | Looking up FFXI game data across the three community wikis. |
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
 | [`ffxi-resources`](skills/ffxi-resources/) | Trusted client-extracted values: message/item IDs, event bytecode, abilities. |
+| [`ffxi-packets`](skills/ffxi-packets/) | Reading raw packet bytes from captures, with first-class action decode. |
 
 Pairs well with [orwell-writing](https://github.com/tamdogood/builder-essential-skills/blob/main/skills/orwell-writing/SKILL.md)
 (MIT, installed separately), which `lsb-docs` defers to for sentence mechanics.
