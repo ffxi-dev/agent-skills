@@ -39,6 +39,8 @@ What is left for a reviewer, because no tool catches it:
   `std::ranges::any_of` and friends over hand-rolled loops. `starts_with` over manual compares.
 - Invert and early-return instead of wrapping a whole function in an `if`.
 - Don't erase while iterating with raw iterators; use `std::erase_if`.
+- `FlatHashMap` invalidates all iterators, pointers, and references on insert (it rehashes,
+  open-addressing). Any iterator or reference held across an insert is a bug. Check its use closely.
 - Constants go in an anonymous namespace at the top of the `.cpp`, not rebuilt per call. Same for
   lookup maps.
 - All DB access via `db::preparedStmt`, with the query defined inline and arguments vertically

@@ -103,6 +103,13 @@ Mark functions `noexcept` when they cannot throw.
 Prefer modern standard library facilities over hand rolled equivalents: `std::span`,
 `std::string_view`, `std::optional`, `std::variant`, structured bindings, and ranges.
 
+LSB provides aliases for some of these, `Maybe<T>` for optional and `Variant<...>` for variant.
+Use the alias the surrounding code uses.
+
+Be careful with `FlatHashMap`: it is open-addressing, so an insert can rehash and invalidate
+every iterator, pointer, and reference into it, unlike `std::unordered_map` where they survive.
+Any code that holds one across an insert needs a close look. Deep-check its use.
+
 ## References
 
 - [Development Guide](https://github.com/LandSandBoat/server/wiki/Development-Guide)

@@ -17,16 +17,19 @@ understanding the work, never a trailer advertising who wrote it.
 
 ## Message
 
-LSB uses one of two subject forms. Match what the surrounding history does:
+LSB uses one of three subject forms. Match what the surrounding history does:
 
 ```
 Implement Mount Zhayolm daily ore caps
 [lua][sql] Update Windurst 6-1 and 6-2
+Documentation: move the wiki in from the lsb-wiki repo
 ```
 
-Bracket tags are the touched area (`[lua]`, `[sql]`, `[cpp]`, `[yaml]`, `[module]`) and
-stack when a change spans several. They are common but not mandatory; a plain imperative
-title is equally idiomatic. LSB does not use `type(module):`.
+Bracket tags are the touched area (`[lua]`, `[sql]`, `[cpp]`, `[yaml]`, `[module]`) and stack
+when a change spans several. A colon prefix names the area in words (`Repo:`, `CI:`,
+`Documentation:`, and `Tag, OtherTag: message` for several). A plain imperative title is equally
+idiomatic. All three are common; none is mandatory. LSB does not use `type(module):` with
+parentheses.
 
 Be as concise as possible. The title alone, read against the diff, should make the change
 obvious.
