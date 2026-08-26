@@ -22,9 +22,11 @@ import json
 import re
 import shutil
 import sqlite3
-import subprocess
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
+from typing import Iterator
 
 HERE = Path(__file__).parent
 CORPUS = HERE / "corpus"
@@ -85,7 +87,7 @@ def source_of(filename: str) -> str:
     return stem.replace("-categories", "").replace("-redirects", "")
 
 
-def read_jsonl(path: Path):
+def read_jsonl(path: Path) -> Iterator[dict[str, object]]:
     """Iterate a JSONL file. Uses the handle, not splitlines(), which also breaks on
     \\x85 and \\u2028 and both occur inside scraped wiki bodies."""
     with open(path, "r", encoding="utf-8") as handle:
@@ -166,44 +168,58 @@ def verify(path: Path, expected: str) -> None:
                         f"  expected {expected}\n  got      {digest}")
 
 
+def fetch(url: str) -> bytes:
+    request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json",
+                                                   "User-Agent": "ffxi-wiki-skill"})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        data: bytes = response.read()
+    return data
+
+
+def release_assets(tag: str | None) -> tuple[str, dict[str, str]]:
+    """Asset name -> download URL, over the public API. No gh CLI, no auth, no login."""
+    path = f"tags/{tag}" if tag else "latest"
+    try:
+        payload = json.loads(fetch(f"https://api.github.com/repos/{REPO}/releases/{path}"))
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            which = f"release {tag}" if tag else "published release"
+            raise WikiError(
+                f"no {which} on {REPO}.\n  https://github.com/{REPO}/releases")
+
+        raise WikiError(f"GitHub returned {error.code} for the release list")
+    except urllib.error.URLError as error:
+        raise WikiError(f"could not reach GitHub: {error.reason}")
+
+    return payload["tag_name"], {a["name"]: a["browser_download_url"] for a in payload["assets"]}
+
+
 def install(corpus: Path, tag: str | None) -> None:
     corpus.mkdir(parents=True, exist_ok=True)
-    command = ["gh", "release", "download"]
-    if tag:
-        command.append(tag)
+    version, assets = release_assets(tag)
+    print(f"corpus release {version}", file=sys.stderr)
 
-    command += ["--repo", REPO, "--pattern", "*.jsonl.gz", "--pattern", "manifest.json",
-                "--dir", str(corpus), "--clobber"]
+    if "manifest.json" not in assets:
+        raise WikiError("release has no manifest.json, so nothing can be checksummed")
 
-    print(f"  {' '.join(command)}", file=sys.stderr)
-    try:
-        result = subprocess.run(command, capture_output=True, text=True)
-    except FileNotFoundError:
-        raise WikiError("the gh CLI is required to download the corpus: https://cli.github.com")
+    manifest = json.loads(fetch(assets["manifest.json"]))
+    (corpus / "manifest.json").write_bytes(json.dumps(manifest, indent=2).encode())
 
-    if result.returncode != 0:
-        raise WikiError(
-            f"download failed: {result.stderr.strip()}\n"
-            f"If no release exists yet, the corpus has not been published. Check\n"
-            f"  https://github.com/{REPO}/releases")
-
-    manifest_path = corpus / "manifest.json"
-    if not manifest_path.is_file():
-        raise WikiError("release had no manifest.json, so nothing can be verified")
-
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     for entry in manifest["files"]:
-        archive = corpus / entry["name"]
-        if not archive.is_file():
-            raise WikiError(f"{entry['name']} is in the manifest but was not downloaded")
+        name = entry["name"]
+        if name not in assets:
+            raise WikiError(f"{name} is in the manifest but not in the release")
 
+        archive = corpus / name
+        print(f"  {name} ({entry['bytes'] / 1048576:.0f} MB)", file=sys.stderr)
+        archive.write_bytes(fetch(assets[name]))
         verify(archive, entry["sha256"])
-        target = archive.with_suffix("")
-        with gzip.open(archive, "rb") as src, open(target, "wb") as dst:
+
+        with gzip.open(archive, "rb") as src, open(archive.with_suffix(""), "wb") as dst:
             shutil.copyfileobj(src, dst)
 
         archive.unlink()
-        print(f"  {target.name}: {entry['lines']:,} lines, verified", file=sys.stderr)
+        print(f"    {entry['lines']:,} lines, checksum ok", file=sys.stderr)
 
     counts = build_index(corpus, INDEX)
     print(f"indexed {sum(counts.values()):,} records from {len(counts)} files -> {INDEX}")

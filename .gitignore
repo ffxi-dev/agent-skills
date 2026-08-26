@@ -37,3 +37,5 @@ dist/
 # Generated corpora. Built locally by the skill scripts, not redistributed.
 skills/ffxi-version-updates/notes/
 skills/ffxi-version-updates/raw/
+
+skills/ffxi-wiki/corpus/
