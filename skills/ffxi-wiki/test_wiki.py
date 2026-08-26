@@ -129,6 +129,25 @@ def test_title_lookup_is_case_insensitive_and_ordered_by_trust() -> None:
     assert out.index("BG Wiki") < out.index("FFXIclopedia"), "BG outranks FFXIclopedia"
 
 
+def test_title_bridges_an_english_name_to_the_japanese_ffo_page() -> None:
+    """FFO pages are titled in Japanese; an English title must still surface them via reading."""
+    with tempfile.TemporaryDirectory() as tmp, indexed(Path(tmp)) as connection:
+        out = query(connection, "title", "Joyeuse")
+
+    assert "FFO Wiki (JP)" in out, "the JP page must appear for an English title query"
+    assert "ジョワユーズ" in out
+    assert out.index("FFO Wiki (JP)") < out.index("BG Wiki"), "JP outranks the English wikis"
+    assert "confidence: high" in out, "JP plus another wiki is high confidence"
+
+
+def test_japanese_reading_renders_without_error() -> None:
+    """Guards the data path that crashed on a real cp1252 console (see the utf-8 reconfigure)."""
+    with tempfile.TemporaryDirectory() as tmp, indexed(Path(tmp)) as connection:
+        out = query(connection, "title", "Dead Aim")
+
+    assert "でっどえいむ/Dead Aim" in out
+
+
 def test_redirect_alias_resolves_to_the_real_page() -> None:
     """Acceptance check 2."""
     with tempfile.TemporaryDirectory() as tmp, indexed(Path(tmp)) as connection:

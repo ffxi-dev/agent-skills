@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import io
 import json
 import re
 import shutil
@@ -289,8 +290,11 @@ def cmd_title(connection: sqlite3.Connection, args: argparse.Namespace) -> int:
     if target.lower() != args.query.lower():
         print(f"'{args.query}' is a redirect to '{target}'")
 
-    sql = "SELECT * FROM pages WHERE title = ? COLLATE NOCASE"
-    params: list[object] = [target]
+    # Match the title, and also an FFO page whose reading carries this English name, since FFO
+    # pages are titled in Japanese so an English title alone never finds them.
+    sql = ("SELECT * FROM pages WHERE (title = ? COLLATE NOCASE"
+           " OR (source = 'ffo-wiki' AND reading LIKE ? COLLATE NOCASE))")
+    params: list[object] = [target, f"%/{target}"]
     if args.source:
         sql += " AND source = ?"
         params.append(args.source)
@@ -388,6 +392,10 @@ def cmd_status(_: object, __: object) -> int:
 
 
 def main() -> int:
+    # The corpus is largely Japanese; Windows consoles default to cp1252 and crash on it.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 

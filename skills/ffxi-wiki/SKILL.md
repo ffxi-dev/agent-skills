@@ -85,6 +85,8 @@ date the change rather than assuming the wiki describes the era in question.
   `title` comes up short for a mob, try `category`.
 - Aliases resolve through the redirect tables, so an item's alternate name finds the real page.
   The reverse map (all known aliases of X) is not built.
+- `title` also finds the FFO page for an English name by matching its `reading`, so a lookup
+  crosses languages without you knowing the Japanese title.
 - `name` works off FFO's `reading` field, `kana/English name`. It is the only systematic JP to
   EN mapping in the corpus, and not every page carries the English half.
 
