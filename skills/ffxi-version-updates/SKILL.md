@@ -15,8 +15,8 @@ compatibility: Requires Python 3.9+ and network access on first run to download 
 
 # FFXI Version Update Notes (EN + JA)
 
-Official patch notes as plain text, one file per update per language: about 1450 notes,
-1260 EN and 192 JA, spanning 2002-07-09 to the present.
+Official patch notes as plain text, one file per update per language: about 2200 notes,
+1260 EN and 954 JA, spanning 2002-07-09 to the present. Both languages run the whole range.
 
 **The corpus is not shipped with this skill.** `notes/` and `raw/` are built locally and are
 deliberately not in git: the text is Square Enix's, not ours to redistribute. Build it once,
@@ -28,7 +28,7 @@ Paths below are relative to this skill's own directory. Run `build.py` from ther
 
 ```bash
 head -1 notes/INDEX.md
-# -> 1452 notes, oldest 2002-07-09, newest 2026-08-18
+# -> 2214 notes, oldest 2002-07-09, newest 2026-08-18
 ```
 
 If that fails, build it. One command, a couple of minutes, mostly a 20MB download:
@@ -64,25 +64,23 @@ free, and the EN and JA files for one update share a date prefix. Each file open
 
 | Source | Records | Coverage |
 |---|---|---|
-| polnews | 753 | playonline.com news, 2003 to present |
+| polnews JP | 762 | playonline.com/ff11 news, 2003 to present |
+| polnews US | 753 | playonline.com/ff11us news, 2003 to present |
 | forum | 364 | forum.square-enix.com, EN subforum 84 and JA subforum 15, 2011 to present |
-| topics | 290 | playonline.com/pcd2 version update detail articles, 2007 to 2010 |
+| topics | 290 | playonline.com/pcd2 version update detail articles, 2006 to 2013 |
 | legacy | 45 | playonline.com comnews and updateus, 2002 to 2007 |
 
-**Japanese covers 2002-2003 and 2011 onward. There is none for 2004 to 2010.**
+**Japanese runs 2002 to the present with no gap**, so the JA cross-check below works for any
+era, including the 75 cap years.
 
-This is a gap in the upstream crawl, not an absence: SE split playonline into JP and US paths,
-and upstream sweeps only the `ff11us` ones for that era. The JP pages are still live at
-`playonline.com/ff11/polnews/newsN.shtml`, the same shape as the US ones with a separate id
-space, and they are Shift_JIS rather than UTF-8.
+Coverage is not one-to-one. Of the version update dates, 456 carry both languages, 647 are EN
+only and 254 are JA only. A missing counterpart is normal rather than a sign you searched
+wrong: SE did not publish every notice in both markets. Check for the paired file, and if there
+is none, say so instead of assuming the other language holds a better answer.
 
-So for 2004 to 2010 the English note is currently all you have, and a vague EN note from that
-era is unresolved rather than one lookup away. Re-check this section if upstream adds JP
-coverage.
-
-The eleven 2002-2003 pages that predate the North American release exist only in Japanese and
-carry a machine translation appended to the note, clearly marked. Treat those translations as
-a reading aid, never as a citable source.
+Some JA notes carry a machine translation appended and clearly marked, including the 2002-2003
+pages that predate the North American release. Treat those translations as a reading aid, never
+as a citable source: quote the Japanese and say it is your own reading of it.
 
 ## Searching
 
@@ -150,12 +148,12 @@ so the Nth bullet under a JA header is the Nth bullet under the matching EN head
 ## Where the data comes from
 
 [Frankie-hz/ffxiupdates](https://github.com/Frankie-hz/ffxiupdates) (MIT) does the hard part:
-it enumerates every official news id by brute force rather than trusting wiki catalogs, crawls
-both the EN and JA version update subforums, and publishes one normalised `all.jsonl` with a
-`lang`, `url` and `category` on every record.
+it enumerates every official news id by brute force rather than trusting wiki catalogs, sweeps
+both the JP and US playonline news paths, crawls the EN and JA version update subforums, and
+publishes one normalised `all.jsonl` with a `lang`, `url` and `category` on every record.
 
 `build.py` downloads that file to `raw/`, keeps the records in the Version Update, Update
-Details and Updates categories (about 1450 of 6300; the rest is login server status and
+Details and Updates categories (about 2200 of 12500; the rest is login server status and
 maintenance notices that bury real hits), flattens the HTML to text, and writes `notes/`.
 
 Report corpus gaps upstream rather than working around them here.
