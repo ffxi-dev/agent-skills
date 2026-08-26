@@ -164,12 +164,34 @@ def test_find_vcvars_no_vswhere(monkey: dict[str, str]) -> None:
 
 def test_write_build_script_configure_toggle() -> None:
     vcvars = Path("C:/vs/vcvars64.bat")
-    with_configure = build.write_build_script(vcvars, "cmake", Path("C:/b"), "xi_test", 8, True, Path("C:/r"))
-    without = build.write_build_script(vcvars, "cmake", Path("C:/b"), "xi_test", 8, False, Path("C:/r"))
+    flags = build.configure_args(build.DEFAULT_BUILD_TYPE, False)
+    with_configure = build.write_build_script(vcvars, "cmake", Path("C:/b"), "xi_test", 8, flags, Path("C:/r"))
+    without = build.write_build_script(vcvars, "cmake", Path("C:/b"), "xi_test", 8, [], Path("C:/r"))
     expect(vcvars.as_posix() in with_configure.replace("\\", "/"), "vcvars baked into script")
     expect("--target xi_test" in with_configure, "target baked in")
     expect("-B" in with_configure, "configure step present when unconfigured")
     expect("-B" not in without, "no configure step when already configured")
+
+
+def test_configure_args_and_flavor() -> None:
+    expect(build.configure_args("RelWithDebInfo", False) == ["-DCMAKE_BUILD_TYPE=RelWithDebInfo"],
+           "plain build type only")
+    expect("-DTRACY_ENABLE=ON" in build.configure_args("RelWithDebInfo", True), "tracy flag added")
+    expect(build.configure_args("ASAN", False) == ["-DCMAKE_BUILD_TYPE=ASAN"], "sanitizer build type")
+    expect(build.flavor_name("RelWithDebInfo", False) is None, "plain build has no flavor dir")
+    expect(build.flavor_name("ASAN", False) == "asan", "sanitizer flavor is its lowercase name")
+    expect(build.flavor_name("RelWithDebInfo", True) == "tracy", "tracy flavor when enabled")
+
+
+def test_pick_build_dir_isolates_a_flavor() -> None:
+    with tempfile.TemporaryDirectory() as raw:
+        root = make_repo(Path(raw))
+        (root / "build").mkdir()
+        (root / "build" / "CMakeCache.txt").write_text("x\n", encoding="utf-8")
+
+        chosen, configured = build.pick_build_dir(root, None, "asan")
+        expect(chosen == root / "build-asan", f"sanitizer gets its own dir, got {chosen}")
+        expect(not configured, "fresh flavor dir is not configured")
 
 
 def _stub_unix(build_dir_configured: bool, calls: list[list[str]], targets: list[str]) -> None:
@@ -178,7 +200,7 @@ def _stub_unix(build_dir_configured: bool, calls: list[list[str]], targets: list
     build.find_cmake = lambda: "cmake"
     build.discover_targets = lambda root: targets
 
-    def pick(root: Path, explicit: str | None) -> tuple[Path, bool]:
+    def pick(root: Path, explicit: str | None, flavor: str | None = None) -> tuple[Path, bool]:
         return Path("/b"), build_dir_configured
 
     def record(argv: list[str], cwd: Path | None = None) -> tuple[int, str]:

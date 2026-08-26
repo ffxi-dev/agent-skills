@@ -53,6 +53,31 @@ BUILD_DIR_PREFERENCE = (
 # System headers whose absence is the vcvars-not-loaded signature, not a code bug.
 SYSTEM_HEADERS = ("algorithm", "cstddef", "cstdint", "windows.h", "vector", "string", "iostream")
 
+# CMAKE_BUILD_TYPE values LSB accepts (cmake/Sanitizers.cmake defines the sanitizer ones).
+DEFAULT_BUILD_TYPE = "RelWithDebInfo"
+BUILD_TYPES = (DEFAULT_BUILD_TYPE, "Debug", "Release", "ASAN", "UBSAN", "TSAN", "LSAN", "MSAN")
+SANITIZERS = ("ASAN", "UBSAN", "TSAN", "LSAN", "MSAN")
+
+
+def configure_args(build_type: str, tracy: bool) -> list[str]:
+    args = [f"-DCMAKE_BUILD_TYPE={build_type}"]
+    if tracy:
+        args.append("-DTRACY_ENABLE=ON")
+
+    return args
+
+
+def flavor_name(build_type: str, tracy: bool) -> str | None:
+    """A short name for an instrumented build, so it gets its own dir and never mixes
+    instrumented objects into the normal build. None for a plain RelWithDebInfo build."""
+    if build_type in SANITIZERS:
+        return build_type.lower()
+
+    if tracy:
+        return "tracy"
+
+    return None
+
 
 class BuildError(Exception):
     """Anything the caller can fix, reported without a stack trace."""
@@ -157,15 +182,20 @@ def discover_targets(root: Path) -> list[str]:
     return sorted(targets)
 
 
-def pick_build_dir(root: Path, explicit: str | None) -> tuple[Path, bool]:
+def pick_build_dir(root: Path, explicit: str | None, flavor: str | None = None) -> tuple[Path, bool]:
     """Choose where to build and report whether it is already configured.
 
-    An explicit --build-dir is used as given. Otherwise reuse an already configured
-    directory (preferring a debug one, whose objects make the incremental fast); if
-    none exists, fall back to the repo's own preset dir, which will need configuring.
+    An explicit --build-dir is used as given. An instrumented build (sanitizer or Tracy)
+    gets its own `build-<flavor>` dir so its objects never mix into the normal build.
+    Otherwise reuse an already configured directory (preferring a debug one, whose objects
+    make the incremental fast); if none exists, fall back to a dir that needs configuring.
     """
     if explicit:
         path = (root / explicit) if not Path(explicit).is_absolute() else Path(explicit)
+        return path, is_configured(path)
+
+    if flavor:
+        path = root / f"build-{flavor}"
         return path, is_configured(path)
 
     configured = [root / name for name in BUILD_DIR_PREFERENCE if is_configured(root / name)]
@@ -206,20 +236,20 @@ def diagnose_c1083(output: str) -> str | None:
 
 
 def write_build_script(
-    vcvars: Path, cmake: str, build_dir: Path, target: str, jobs: int, configure: bool, root: Path
+    vcvars: Path, cmake: str, build_dir: Path, target: str, jobs: int, configure: list[str], root: Path
 ) -> str:
     """A temp .bat that loads MSVC, optionally configures, then builds. Baking every
-    value in avoids nested-quote grief when cmd.exe runs it.
+    value in avoids nested-quote grief when cmd.exe runs it. `configure` is the list of
+    -D flags for the configure step, or empty to skip configuring.
     """
     lines = [
         "@echo off",
         f'call "{vcvars}" >nul || (echo [lsb-build] vcvars64.bat failed & exit /b 1)',
     ]
     if configure:
+        flags = " ".join(configure)
         lines.append(
-            f'"{cmake}" -S "{root}" -B "{build_dir}" -DCMAKE_BUILD_TYPE=RelWithDebInfo '
-            f"|| exit /b %errorlevel%"
-        )
+            f'"{cmake}" -S "{root}" -B "{build_dir}" {flags} || exit /b %errorlevel%')
 
     lines.append(f'"{cmake}" --build "{build_dir}" --target {target} -j {jobs}')
     lines.append("exit /b %errorlevel%")
@@ -252,32 +282,41 @@ def run_build(script: str) -> tuple[int, str]:
 
 
 def build(
-    root: Path, target: str, build_dir_arg: str | None, jobs: int, vcvars_arg: str | None
+    root: Path, target: str, build_dir_arg: str | None, jobs: int, vcvars_arg: str | None,
+    build_type: str = DEFAULT_BUILD_TYPE, tracy: bool = False
 ) -> int:
     targets = discover_targets(root)
     if target not in targets:
         listed = ", ".join(targets) or "(none found)"
         raise BuildError(f"unknown target {target!r}. Available targets: {listed}")
 
+    if build_type in SANITIZERS and IS_WINDOWS:
+        print(f"[lsb-build] warning: {build_type} uses gcc/clang -fsanitize flags; an MSVC build\n"
+              "will likely reject them. Sanitizer builds are meant for Linux or macOS.", file=sys.stderr)
+
     cmake = find_cmake()
-    build_dir, configured = pick_build_dir(root, build_dir_arg)
+    flavor = flavor_name(build_type, tracy)
+    build_dir, configured = pick_build_dir(root, build_dir_arg, flavor)
 
     print(f"repo:      {root}", file=sys.stderr)
     print(f"build dir: {build_dir}{'' if configured else '  (configuring, first build is slow)'}", file=sys.stderr)
     print(f"target:    {target}", file=sys.stderr)
+    if flavor:
+        print(f"flavor:    {build_type}{' +tracy' if tracy else ''}", file=sys.stderr)
+
+    flags = configure_args(build_type, tracy) if not configured else []
 
     if IS_WINDOWS:
         # MSVC needs its environment; source vcvars in a .bat before cmake runs.
         vcvars = find_vcvars(vcvars_arg)
         print(f"vcvars:    {vcvars}", file=sys.stderr)
-        script = write_build_script(vcvars, cmake, build_dir, target, jobs, not configured, root)
+        script = write_build_script(vcvars, cmake, build_dir, target, jobs, flags, root)
         code, output = run_build(script)
     else:
         # Linux and macOS: the compiler environment is already set up, so it is plain cmake.
         code, output = 0, ""
-        if not configured:
-            code, output = stream([cmake, "-S", str(root), "-B", str(build_dir),
-                                   "-DCMAKE_BUILD_TYPE=RelWithDebInfo"])
+        if flags:
+            code, output = stream([cmake, "-S", str(root), "-B", str(build_dir), *flags])
 
         if code == 0:
             code, output = stream([cmake, "--build", str(build_dir), "--target", target,
@@ -300,6 +339,11 @@ def main() -> int:
     parser.add_argument("--build-dir", help="build directory (else an existing one, else ./build)")
     parser.add_argument("--vcvars", help="path to vcvars64.bat (else $VCVARS64, else vswhere)")
     parser.add_argument("--jobs", "-j", type=int, default=os.cpu_count() or 8, help="parallel jobs")
+    parser.add_argument("--build-type", default=DEFAULT_BUILD_TYPE, choices=BUILD_TYPES,
+                        help="CMAKE_BUILD_TYPE; the sanitizer types (ASAN, UBSAN, TSAN, ...) build "
+                             "into their own dir. Sanitizers need gcc/clang, i.e. Linux or macOS.")
+    parser.add_argument("--tracy", action="store_true",
+                        help="build with Tracy profiling on (-DTRACY_ENABLE=ON), into build-tracy")
     parser.add_argument("--list", action="store_true", help="list buildable targets and exit")
     args = parser.parse_args()
 
@@ -314,7 +358,8 @@ def main() -> int:
         if not args.target:
             parser.error("a target is required (or use --list). Try: xi_test")
 
-        return build(root, args.target, args.build_dir, args.jobs, args.vcvars)
+        return build(root, args.target, args.build_dir, args.jobs, args.vcvars,
+                     args.build_type, args.tracy)
     except BuildError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

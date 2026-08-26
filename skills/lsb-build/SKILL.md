@@ -75,6 +75,23 @@ touched.
   configures `./build` from scratch, which is the slow first build.
 - `--vcvars PATH` an explicit vcvars64.bat. Otherwise `$VCVARS64`, otherwise `vswhere`.
 - `--jobs N` / `-j N` parallel jobs, default the CPU count.
+- `--build-type TYPE` the `CMAKE_BUILD_TYPE`. Default `RelWithDebInfo`. The sanitizer types
+  `ASAN`, `UBSAN`, `TSAN`, `LSAN`, `MSAN` (from `cmake/Sanitizers.cmake`) each build into their
+  own `build-<type>` directory, so instrumented objects never mix into the normal build. They
+  use gcc/clang `-fsanitize` flags, so they are for Linux and macOS; on Windows the skill warns
+  and lets cmake report.
+- `--tracy` build with Tracy profiling on (`-DTRACY_ENABLE=ON`), into `build-tracy`. Pair this
+  with the `lsb-profile` skill, which runs the server and captures a trace.
+
+## Sanitizers and profiling
+
+```bash
+python build.py xi_map --build-type ASAN     # AddressSanitizer build, into build-asan
+python build.py xi_map --tracy               # Tracy-enabled build, into build-tracy
+```
+
+Each flavor keeps its own build directory so switching back to a normal build does not force a
+full reconfigure. `lsb-profile` covers what to do with a `--tracy` build once it is running.
 
 ## How discovery works
 
