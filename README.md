@@ -34,6 +34,7 @@ per-agent copies.
 | [`lsb-commits`](skills/lsb-commits/) | Writing a commit message or structuring a branch for review. |
 | [`lsb-docs`](skills/lsb-docs/) | Writing docs, PR descriptions, or a capture writeup. |
 | [`lsb-pr-review`](skills/lsb-pr-review/) | Reviewing an LSB diff, or self-checking before opening a PR. |
+| [`lsb-exploit`](skills/lsb-exploit/) | Checking a packet handler, binding, or event script for client-trust holes. |
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
 | [`ffxi-wiki`](skills/ffxi-wiki/) | Looking up FFXI game data across the three community wikis. |
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
@@ -72,7 +73,7 @@ The loop for any change:
 
 ```sh
 agentskills validate skills/<skill-name>   # frontmatter
-mypy --strict .                            # types
+mypy --strict skills/<skill-name>           # types (per skill: two skills share a build.py basename)
 python hooks/test_lsb_cpp_check.py         # or: pytest
 ```
 
@@ -128,7 +129,7 @@ against the spec on push:
 ```sh
 pip install skills-ref mypy
 agentskills validate skills/<skill-name>   # frontmatter
-mypy --strict .                            # types
+mypy --strict skills/<skill-name>           # types (per skill: two skills share a build.py basename)
 python hooks/test_lsb_cpp_check.py         # or: pytest
 ```
 
@@ -216,7 +217,7 @@ Two lines, near-zero context cost, works for both agents, and keeps one source o
 
 - Python and YAML by default, matching LSB's own tooling. Another language is fine if agents
   are fluent in it and can iterate quickly. Type checking is the bar: a compiled language
-  gets it for free, Python needs annotations and CI runs `mypy --strict` over the repo.
+  gets it for free, Python needs annotations and CI runs `mypy --strict` per skill.
 - Dependencies are fine as long as they are not massive, defined loosely and by judgement.
   One that does a job well beats fifty lines of clever.
 - Do not let supporting scripts sprawl. Shared code lives at the repo root and gets reused.

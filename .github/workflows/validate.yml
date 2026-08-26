@@ -27,7 +27,17 @@ jobs:
           if [ "$found" = 0 ]; then echo "no skills yet"; fi
 
       - name: Type check
-        run: mypy --strict .
+        run: |
+          # Per directory, not `mypy --strict .`: two skills each ship a build.py, and mypy
+          # rejects duplicate module basenames across a single invocation.
+          shopt -s nullglob
+          for dir in skills/*/ hooks; do
+            if ls "$dir"/**/*.py "$dir"/*.py >/dev/null 2>&1; then
+              echo "::group::mypy $dir"
+              mypy --strict "$dir"
+              echo "::endgroup::"
+            fi
+          done
 
       - name: Run tests
         run: |
