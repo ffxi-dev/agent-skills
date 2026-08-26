@@ -35,7 +35,7 @@ per-agent copies.
 | [`lsb-docs`](skills/lsb-docs/) | Writing docs, PR descriptions, or a capture writeup. |
 | [`lsb-pr-review`](skills/lsb-pr-review/) | Reviewing an LSB diff, or self-checking before opening a PR. |
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
-| [`zone-render`](skills/zone-render/) | Plotting coordinates on a zone map as a PNG. |
+| [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
 
 Pairs well with [orwell-writing](https://github.com/tamdogood/builder-essential-skills/blob/main/skills/orwell-writing/SKILL.md)
 (MIT, installed separately), which `lsb-docs` defers to for sentence mechanics.

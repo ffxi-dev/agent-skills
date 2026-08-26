@@ -1,5 +1,5 @@
 ---
-name: zone-render
+name: ffxi-zone-render
 description: >
   Render a top-down map of an FFXI zone with arbitrary coordinates marked on it, headless,
   as a PNG. Use whenever the answer is easier to see than to read: where a set of mobs or

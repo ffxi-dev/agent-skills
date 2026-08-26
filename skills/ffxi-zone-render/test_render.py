@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the zone render helper.
 
-Runs under pytest or standalone: `python skills/zone-render/test_render.py`.
+Runs under pytest or standalone: `python skills/ffxi-zone-render/test_render.py`.
 
 Covers everything up to the browser: repo discovery, zone name resolution, and every
 input mistake that would otherwise surface as a 120 second wait for a mesh that is
