@@ -15,5 +15,6 @@
     "ffxi",
     "lsb",
     "code-review"
-  ]
+  ],
+  "hooks": "./hooks/lsb-hooks.json"
 }
