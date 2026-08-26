@@ -1,0 +1,19 @@
+{
+  "name": "lsb-agents-skills",
+  "displayName": "LSB Agent Skills",
+  "description": "Agent Skills for working on LandSandBoat: review, conventions, data formats, and packet/capture workflows.",
+  "version": "0.1.0",
+  "author": {
+    "name": "sruon",
+    "url": "https://github.com/sruon"
+  },
+  "homepage": "https://github.com/sruon/lsb-agents-skills",
+  "repository": "https://github.com/sruon/lsb-agents-skills",
+  "license": "MIT",
+  "keywords": [
+    "landsandboat",
+    "ffxi",
+    "lsb",
+    "code-review"
+  ]
+}
