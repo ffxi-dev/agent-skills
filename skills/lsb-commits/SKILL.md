@@ -11,6 +11,9 @@ license: MIT
 Do not add a Claude, AI, or agent co-author trailer to a commit or PR. Use the repo's
 configured git identity, and never pass `-c user.name` or `-c user.email`.
 
+This is not the same as disclosure. LandSandBoat requires AI usage to be disclosed as prose in
+the PR body, and `lsb-pr-review` covers that. Disclose there, never in a trailer.
+
 ## Message
 
 LSB uses one of two subject forms. Match what the surrounding history does:

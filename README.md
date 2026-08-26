@@ -32,6 +32,7 @@ per-agent copies.
 | [`lsb-cpp-style`](skills/lsb-cpp-style/) | Writing, modifying, or reviewing C++ in the server. |
 | [`lsb-commits`](skills/lsb-commits/) | Writing a commit message or structuring a branch for review. |
 | [`lsb-docs`](skills/lsb-docs/) | Writing docs, PR descriptions, or a capture writeup. |
+| [`lsb-pr-review`](skills/lsb-pr-review/) | Reviewing an LSB diff, or self-checking before opening a PR. |
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
 
 Pairs well with [orwell-writing](https://github.com/tamdogood/builder-essential-skills/blob/main/skills/orwell-writing/SKILL.md)

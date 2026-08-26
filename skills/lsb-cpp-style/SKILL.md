@@ -12,7 +12,9 @@ are already editing, leave the rest.
 
 Three sources, no overlap:
 
-- **This skill**: the rules below.
+- **This skill**: the rules below. It covers writing C++. For reviewing a diff, the
+  `lsb-pr-review` skill adds the LSB-specific checks (entity casts, `db::preparedStmt`,
+  `modifier.h` ids, logging, IPC) and defers general style back here.
 - **[Development Guide](https://github.com/LandSandBoat/server/wiki/Development-Guide)**:
   naming, casting, exceptions, formatting rationale, plus the Lua/SQL/Python conventions.
 - **Repo `CLAUDE.md`**: trailing return types, blank line after a closing brace, `member_`
