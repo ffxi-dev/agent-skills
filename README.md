@@ -35,6 +35,7 @@ per-agent copies.
 | [`lsb-docs`](skills/lsb-docs/) | Writing docs, PR descriptions, or a capture writeup. |
 | [`lsb-pr-review`](skills/lsb-pr-review/) | Reviewing an LSB diff, or self-checking before opening a PR. |
 | [`lsb-exploit`](skills/lsb-exploit/) | Checking a packet handler, binding, or event script for client-trust holes. |
+| [`lsb-tests`](skills/lsb-tests/) | Writing and running LSB tests, and diagnosing flakes. |
 | [`ffxi-version-updates`](skills/ffxi-version-updates/) | Dating when a retail mechanic changed, EN and JA patch notes. |
 | [`ffxi-wiki`](skills/ffxi-wiki/) | Looking up FFXI game data across the three community wikis. |
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
