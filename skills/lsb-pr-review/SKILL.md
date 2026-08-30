@@ -90,6 +90,13 @@ Reviewing order:
   players; the fixed value over a wide random).
 - Wide randoms on mobskill effect durations defeat resist states - use the balanced value plus
   resistances, not `math.random(15, 60)`.
+- **Check the units on both sides of any time arithmetic.** Status effect durations, BCNM or
+  fight time remaining, recast, cooldowns, timestamps: confirm both operands are the same unit
+  before you add, subtract, or compare them. LSB mixes earth seconds, milliseconds, Vana'diel
+  time (which runs faster than real time), and game ticks. A duration that is off by a round
+  factor (1000 between ms and seconds, or the Vana'diel-to-earth ratio) is a units mismatch, not
+  a tuning miss - a real, easy-to-miss bug class. Confirm which unit each helper returns rather
+  than assuming.
 - Where retail is clearly janky or leaks information SE didn't intend, LSB may deliberately do
   better - put it behind a setting that explains the choice, and default to retail.
 
