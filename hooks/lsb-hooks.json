@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/lsb_cpp_check.py\"",
-            "commandWindows": "python \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\lsb_cpp_check.py\"",
+            "command": "PY=$(command -v python3 || command -v python); [ -n \"$PY\" ] && \"$PY\" \"${CLAUDE_PLUGIN_ROOT}/hooks/lsb_cpp_check.py\"",
+            "commandWindows": "$p = Get-Command python,py -ErrorAction SilentlyContinue | Select-Object -First 1; if ($p) { & $p.Source \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\lsb_cpp_check.py\"; exit $LASTEXITCODE }",
             "timeout": 10,
             "statusMessage": "Checking C++ style..."
           }
