@@ -2,7 +2,7 @@
   "name": "lsb-agents-skills",
   "displayName": "LSB Agent Skills",
   "description": "Agent Skills for working on LandSandBoat: review, conventions, data formats, and packet/capture workflows.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": {
     "name": "sruon",
     "url": "https://github.com/sruon"
