@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/ffxi-dev/agent-skills/compare/v0.6.0...v0.7.0) (2026-10-30)
+
+
+### Features
+
+* lsb-pr-review flags mismatched units in time arithmetic ([e56dbca](https://github.com/ffxi-dev/agent-skills/commit/e56dbca204bfb5ee14995e50f8d0554675e9144c))
+
+
+### Bug Fixes
+
+* hook uses python when python3 is absent, and propagates exit 2 on Windows ([248086e](https://github.com/ffxi-dev/agent-skills/commit/248086ee35e242942463da8bd39c5dca4c1e55e8))
+
 ## [0.6.0](https://github.com/sruon/lsb-agents-skills/compare/v0.5.0...v0.6.0) (2026-08-26)
 
 
