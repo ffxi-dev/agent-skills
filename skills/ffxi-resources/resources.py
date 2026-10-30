@@ -39,7 +39,7 @@ HERE = Path(__file__).parent
 CORPUS = HERE / "corpus"
 INDEX = CORPUS / "resources.db"
 RELEASE_FILE = CORPUS / "release.json"
-REPO = "sruon/FFXI-Resources"
+REPO = "ffxi-dev/retail-resources"
 SITE = "https://res.sruon.dev"
 
 # Per-dataset lookup key and searchable name field. `key` fields are joined with "-" to form

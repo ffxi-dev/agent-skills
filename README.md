@@ -66,7 +66,7 @@ when a task matches. Nothing else here concerns you.
 **You want to work on them.** Clone it and install the two tools CI uses:
 
 ```sh
-git clone https://github.com/sruon/lsb-agents-skills.git
+git clone https://github.com/ffxi-dev/agent-skills.git
 cd lsb-agents-skills
 pip install skills-ref mypy
 ```
@@ -92,14 +92,14 @@ reinstall the plugin, or you will be testing the old version and wondering why n
 **Claude Code**
 
 ```
-/plugin marketplace add sruon/lsb-agents-skills
+/plugin marketplace add ffxi-dev/agent-skills
 /plugin install lsb-agents-skills@lsb-agents-skills
 ```
 
 **Codex**: clone anywhere and symlink into a repo Codex reads:
 
 ```sh
-git clone https://github.com/sruon/lsb-agents-skills.git
+git clone https://github.com/ffxi-dev/agent-skills.git
 ln -s "$PWD/lsb-agents-skills/skills" ~/.agents/skills/lsb
 ```
 

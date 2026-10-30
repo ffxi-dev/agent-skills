@@ -42,7 +42,7 @@ python resources.py event 1 100               # event by zone_id + event_id (byt
 `status` with no argument reports the corpus; `status <id|name>` looks up a status effect.
 
 `status` reporting no corpus means run `python resources.py install`. It downloads the latest
-release from [sruon/FFXI-Resources](https://github.com/sruon/FFXI-Resources), decompresses
+release from [ffxi-dev/retail-resources](https://github.com/ffxi-dev/retail-resources), decompresses
 every `<dataset>.ndjson.gz`, and builds the index. No GitHub CLI or login needed. Refresh the
 same way; `install` is safe to re-run when a new decode is published.
 
@@ -117,7 +117,7 @@ since, so date it with `ffxi-version-updates` rather than assuming this row matc
 
 Fifteen or so NDJSON files, about 935MB decompressed (the index over them is a further ~2GB,
 most of it the 2.9M-row strings table), from the release assets on
-[sruon/FFXI-Resources](https://github.com/sruon/FFXI-Resources). The decompressed NDJSON is the
+[ffxi-dev/retail-resources](https://github.com/ffxi-dev/retail-resources). The decompressed NDJSON is the
 source of truth on disk; the SQLite index is derived, and `python resources.py index` rebuilds
 it from the NDJSON without re-downloading. Force-UTF-8 stdout is set at startup because the data
 is largely Japanese and a Windows cp1252 console crashes on it otherwise.

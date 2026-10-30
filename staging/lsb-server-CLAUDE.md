@@ -88,6 +88,6 @@ cmake -DENABLE_CLANG_TIDY=ON ..             # the checks CI runs on every PR
 
 ## Optional
 
-[lsb-agents-skills](https://github.com/sruon/lsb-agents-skills) packages the above as Agent
+[lsb-agents-skills](https://github.com/ffxi-dev/agent-skills) packages the above as Agent
 Skills, with an edit time hook that catches the C++ rules no linter checks. Not required to
 contribute.
