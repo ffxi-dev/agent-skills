@@ -92,7 +92,7 @@ date the change rather than assuming the wiki describes the era in question.
 
 ## Corpus
 
-Seven JSONL files from [ffxi-dev/ffxi-wiki-dumps](https://github.com/ffxi-dev/ffxi-wiki-dumps),
+Seven JSONL files from [ffxi-dev/wiki-dumps](https://github.com/ffxi-dev/wiki-dumps),
 about 400MB uncompressed: articles, Category: pages and redirects for each wiki. The JSONL is
 the source of truth and stays on disk; `wiki.py index` rebuilds a damaged index without
 re-downloading.

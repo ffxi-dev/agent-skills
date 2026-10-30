@@ -32,7 +32,7 @@ from typing import Iterator
 HERE = Path(__file__).parent
 CORPUS = HERE / "corpus"
 INDEX = CORPUS / "wiki.db"
-REPO = "ffxi-dev/ffxi-wiki-dumps"
+REPO = "ffxi-dev/wiki-dumps"
 
 # FFO first: the JP community is closer to dev information and more rigorous about
 # datamining. FFXIclopedia is a legacy Fandom wiki, much of it pre-Abyssea.
