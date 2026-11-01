@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/ffxi-dev/agent-skills/compare/v0.7.0...v0.8.0) (2026-11-01)
+
+
+### Features
+
+* add scholar skill, which asks SQL across every capture Vault archives ([aba6039](https://github.com/ffxi-dev/agent-skills/commit/aba60396b5334092f88007591294221e45c9b94a))
+
 ## [0.7.0](https://github.com/ffxi-dev/agent-skills/compare/v0.6.0...v0.7.0) (2026-10-30)
 
 
