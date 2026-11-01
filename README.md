@@ -43,6 +43,7 @@ per-agent copies.
 | [`ffxi-zone-render`](skills/ffxi-zone-render/) | Plotting coordinates on a zone map as a PNG. |
 | [`ffxi-resources`](skills/ffxi-resources/) | Trusted client-extracted values: message/item IDs, event bytecode, abilities. |
 | [`ffxi-packets`](skills/ffxi-packets/) | Reading raw packet bytes from captures, with first-class action decode. |
+| [`scholar`](skills/scholar/) | Asking SQL across every capture Vault archives: mobs, NPCs, zones, gear, any packet field. |
 | [`ffxi-re`](skills/ffxi-re/) | Reverse-engineering the FFXI client: decomp, FFXiMain.dll, PS2 ELF. |
 
 Pairs well with [orwell-writing](https://github.com/tamdogood/builder-essential-skills/blob/main/skills/orwell-writing/SKILL.md)
