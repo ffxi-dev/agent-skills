@@ -38,6 +38,14 @@ class Fake(BaseHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         if path in PAGES:  # Mogsafe's JSON and Scholar's named queries, which answer anyone
             return self.reply(200, PAGES[path](query))
+        if path.startswith("/library/"):  # the Explore pages' SQL, as ffxi-dev/extractors holds it
+            sql = LIBRARY.get(path.removeprefix("/library/").removesuffix(".sql"))
+            if sql is None:
+                return self.reply(404, {})
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(sql.encode())
+            return
         if path.startswith("/c/"):
             data = b"XICAP" * 10
             self.send_response(200)
@@ -73,6 +81,13 @@ PAGES: dict[str, Callable[[str], Any]] = {
     "/v1/queries/npc_zone_shops": lambda q: rows(["npc_name", "item"], ["Ostalie", 4096], ["Other", 1]),
     "/v1/web/timeline/abc": lambda q: {"latest": 1795590741460, "captures": [] if "from" not in q else [{"id": q}]},
 }
+PAGES["/static/queries.json"] = lambda q: {"zone_name": "SELECT name FROM zone_names WHERE id = {zone:Int64}",
+                                          "page": "SELECT page FROM capture_pages WHERE capture_id = {id:String}"}
+LIBRARY = {"bestiary_mob": "SELECT * FROM bestiary WHERE zone = {zone:Int64} AND name = {name:String};\n",
+           "shop_npcs": "SELECT zone, npc_name FROM npc_shops",
+           "npc_zone_shops": "SELECT * FROM npc_shops WHERE zone_id = {zone:Int64}"}
+for name in scholar.MOB[1:]:
+    LIBRARY[name] = "SELECT 1 FROM bestiary WHERE zone = {zone:Int64} AND name = {name:String}"
 for name in scholar.MOB + ("zone_name",):
     PAGES[f"/v1/queries/{name}"] = lambda q: rows(["q"], [q])
 
@@ -98,6 +113,26 @@ def main() -> None:
     assert mob["data"][-1]["rows"] == [{"q": "zone=103"}]
     shop = json.loads(run("open", "mogsafe.sruon.dev/shops/230/Ostalie"))["data"]
     assert shop[0]["rows"] == [{"zone": 230, "npc_name": "Ostalie"}] and shop[1]["rows"] == [{"npc_name": "Ostalie", "item": 4096}]
+
+    # sql gives the same queries' SQL for the MCP query tool, the page's values in as literals.
+    scholar.LIBRARY = scholar.URL + "/library"
+    sql = run("sql", "https://mogsafe.sruon.dev/mobs/103/Mee%27Deggi%20the%20Punisher")
+    assert "-- bestiary_mob" in sql and "WHERE zone = 103 AND name = 'Mee\\'Deggi the Punisher'\n" in sql, sql
+    assert "SELECT name FROM zone_names WHERE id = 103" in sql
+    shop = run("sql", "https://mogsafe.sruon.dev/shops/230/Ostalie")
+    assert "SELECT * FROM (SELECT zone, npc_name FROM npc_shops) WHERE zone = 230 AND npc_name = 'Ostalie'" in shop
+    assert "SELECT page FROM capture_pages WHERE capture_id = 'rec1'" in run("sql", "https://mogsafe.sruon.dev/captures/ses1")
+    for bad in ("https://mogsafe.sruon.dev/recipes", "https://mogsafe.sruon.dev/captures", "https://mogsafe.sruon.dev/t/abc"):
+        try:
+            run("sql", bad)  # a page whose SQL Scholar does not hold, or no named query at all
+            raise AssertionError(f"{bad} must exit")
+        except SystemExit:
+            pass
+    try:
+        scholar.literal("1; DROP", "Int64")
+        raise AssertionError("a number blank takes only a number")
+    except SystemExit:
+        pass
 
     # A session's page is its recording's analysis, and Lens opens the recording at the session.
     page = json.loads(run("open", "https://mogsafe.sruon.dev/captures/ses1"))

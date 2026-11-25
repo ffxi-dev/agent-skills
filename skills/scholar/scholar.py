@@ -2,6 +2,7 @@
 """Ask Scholar, and read any Mogsafe page's data.
 
   python scholar.py open URL               the data a mogsafe.sruon.dev, scholar.sruon.dev, or lens.sruon.dev page shows
+  python scholar.py sql URL                the SQL behind that data, values filled in, for the MCP query tool
   python scholar.py download URL|ID [FILE] save a capture's .xicap
   python scholar.py named NAME [k=v ...]   one of the named queries the pages run
   python scholar.py tables [name] | versions | query "SQL"    (these need a key)
@@ -26,6 +27,11 @@ URL = os.environ.get("SCHOLAR_URL", "https://scholar.sruon.dev")
 MOGSAFE = os.environ.get("MOGSAFE_URL", "https://mogsafe.sruon.dev")
 LENS = "https://lens.sruon.dev"
 AGENT = "scholar-skill"
+# The named queries' SQL: Scholar's own as it serves them, and the library's Explore pages from ffxi-dev/extractors.
+LIBRARY = os.environ.get(
+    "SCHOLAR_LIBRARY", "https://raw.githubusercontent.com/ffxi-dev/extractors/main/ffxi_extractors/sql/pages"
+)
+BLANK = re.compile(r"\{(\w+):(\w+)\}")
 NO_KEY = "SCHOLAR_API_KEY is not set: make a key at https://scholar.sruon.dev/keys"
 
 # One named query the page runs: its name, its parameters, and the columns a row must match to be the page's.
@@ -69,6 +75,42 @@ def named(name: str, params: Dict[str, Any], keep: Dict[str, Any] | None = None)
     return {"query": name, "params": params, "rows": rows, "truncated": r.get("truncated", False)}
 
 
+def text(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return str(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"{urllib.parse.urlsplit(url).netloc} answered {e.code} for {url}") from None
+
+
+def literal(value: Any, kind: str = "") -> str:
+    """value as a ClickHouse literal: a number when kind is not String and it is one, else a quoted string."""
+    v = str(value)
+    if kind != "String" and re.fullmatch(r"-?\d{1,19}", v):
+        return v
+    if kind not in ("", "String"):
+        raise SystemExit(f"{v!r} is not a number")
+    return "'" + v.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def step_sql(name: str, params: Dict[str, Any], keep: Dict[str, Any], own: Dict[str, str]) -> str:
+    """A named query's SQL with the page's values in its {name:Type} blanks, cut to the rows the page shows."""
+    sql = own[name] if name in own else text(f"{LIBRARY}/{name}.sql")
+    missing = {k for k, _ in BLANK.findall(sql)} - params.keys()
+    if missing:
+        raise SystemExit(f"{name} needs {', '.join(sorted(missing))}")
+    sql = BLANK.sub(lambda m: literal(params[m[1]], m[2]), sql).strip().rstrip(";")
+    if keep:
+        sql = f"SELECT * FROM ({sql}) WHERE " + " AND ".join(f"{k} = {literal(v)}" for k, v in keep.items())
+    return f"-- {name} {json.dumps(params, ensure_ascii=False)}\n{sql}"
+
+
+def sql_of(steps: Sequence[Step]) -> str:
+    own = fetch(f"{URL}/static/queries.json")
+    return "\n\n".join(step_sql(*s, own) for s in steps)
+
+
 # Every Explore page and the named queries it runs, as Scholar's capture.js mounts it on Mogsafe.
 MOB = ("bestiary_mob", "bestiary_geometry", "bestiary_evidence", "bestiary_names", "bestiary_steals",
        "bestiary_effects", "bestiary_events", "bestiary_exp", "bestiary_looks", "bestiary_animations",
@@ -105,9 +147,11 @@ def explore(path: str) -> Sequence[Step] | None:
     return None
 
 
-def capture(id: str) -> Dict[str, Any]:
+def capture(id: str, sql: bool = False) -> Any:
     """A capture's page: Mogsafe's record of it, and Scholar's analysis of its whole recording."""
     web = fetch(f"{MOGSAFE}/v1/web/captures/{urllib.parse.quote(id)}")
+    if sql:  # the page column is one JSON string: each part's {"columns", "rows"}
+        return sql_of([("page", {"id": web["analysis"]["id"]}, {})])
     recording, session = web["analysis"]["id"], web.get("session")
     stored = named("page", {"id": recording})["rows"]
     parts = json.loads(stored[0]["page"]) if stored else {}
@@ -168,16 +212,22 @@ def capture_id(target: str) -> str:
     return m[1]
 
 
-def open_url(url: str) -> Any:
+def open_url(url: str, sql: bool = False) -> Any:
+    """The data the page at url shows; with sql, the SQL behind it instead."""
     parts = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
     host, path = parts.netloc.lower(), parts.path.rstrip("/") or "/"
     query = dict(urllib.parse.parse_qsl(parts.query))
     if host == "lens.sruon.dev" or (host == "scholar.sruon.dev" and path.startswith("/captures/")):
-        return capture(capture_id(path))
+        return capture(capture_id(path), sql)
     if host == "scholar.sruon.dev" and path.startswith("/v1/queries/"):
-        return named(path.rsplit("/", 1)[1], query)
+        name = path.rsplit("/", 1)[1]
+        return sql_of([(name, query, {})]) if sql else named(name, query)
     if host != "mogsafe.sruon.dev":
         raise SystemExit(f"not a Mogsafe, Scholar, or Lens link: {url}")
+    if path.startswith("/captures/") and not path.endswith("/timeline"):
+        return capture(capture_id(path), sql)
+    if sql and explore(path) is None:
+        raise SystemExit(f"{path} is Mogsafe's own data or a search, not a named query: use open")
     if path in ("/", "/captures"):
         return fetch(f"{MOGSAFE}/v1/web/captures?{parts.query}")
     if re.fullmatch(r"/c/[^/]+", path):
@@ -192,8 +242,6 @@ def open_url(url: str) -> Any:
     m = re.fullmatch(r"/t/([^/]+)", path)
     if m:
         return timeline(m[1], query)
-    if path.startswith("/captures/"):
-        return capture(capture_id(path))
     if path == "/search":
         return search(query)
     if path in SIGNED_IN:
@@ -201,6 +249,8 @@ def open_url(url: str) -> Any:
     steps = explore(path)
     if steps is None:
         raise SystemExit(f"no data behind {url}: see the route table in SKILL.md")
+    if sql:
+        return sql_of(steps)
     note = "The page's ?q= filters these rows in the browser; filter them yourself." if query.get("q") else ""
     return {"page": url, "data": [named(*s) for s in steps], "note": note}
 
@@ -231,14 +281,16 @@ def table(columns: list[str], rows: list[list[Any]]) -> str:
 
 
 def main(argv: list[str]) -> int:
-    commands = ("open", "download", "named", "tables", "versions", "query")
+    commands = ("open", "sql", "download", "named", "tables", "versions", "query")
     if not argv or argv[0] not in commands or any(a.startswith("-") for a in argv[1:2] + argv[2:3]):
         print(__doc__)  # an option such as --help is no URL or file name
         return 2
-    if argv[0] in ("open", "download", "named", "query") and len(argv) < 2:
+    if argv[0] in ("open", "sql", "download", "named", "query") and len(argv) < 2:
         raise SystemExit(f"{argv[0]} needs an argument: see python scholar.py")
     if argv[0] == "open":
         print(json.dumps(open_url(argv[1]), ensure_ascii=False))
+    elif argv[0] == "sql":
+        print(open_url(argv[1], sql=True))
     elif argv[0] == "download":
         download(argv[1], argv[2] if len(argv) > 2 else None)
     elif argv[0] == "named":

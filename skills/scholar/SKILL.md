@@ -4,13 +4,14 @@ description: >
   Read Vault's archive of retail FFXI captures through Scholar. Use it whenever you are given a
   mogsafe.sruon.dev, scholar.sruon.dev, or lens.sruon.dev link (a capture, a mob, an item, a
   recipe, a TP move, an NPC, a shop, a timeline, a /c/ download): those pages draw their data
-  with JavaScript, so fetching the HTML shows nothing; `scholar.py open <link>` returns the data
-  the page shows. Also use it to ask SQL across every capture: which mobs and NPCs appear in a
-  zone, where and how often, their HP, claims, and positions; what the recording character wore;
-  zones visited; any decoded packet field. Use it before grepping logs one capture at a time.
-  Every packet row links to Lens, so an answer can be checked against the bytes.
+  with JavaScript, so fetching the HTML shows nothing. `scholar.py open <link>` returns the
+  page's data, and `scholar.py sql <link>` the SQL behind it for the mogsafe MCP server's query
+  tool. Also use it to ask SQL across every capture: which mobs and NPCs appear in a zone, where
+  and how often, their HP, claims, and positions; what the recording character wore; zones
+  visited; any decoded packet field. Every packet row links to Lens, so an answer can be checked
+  against the bytes.
 license: MIT
-compatibility: Requires Python 3.9+ and network access to scholar.sruon.dev and mogsafe.sruon.dev. SQL, search, and the gaps need SCHOLAR_API_KEY.
+compatibility: Requires Python 3.9+ and network access to scholar.sruon.dev and mogsafe.sruon.dev. SQL needs the mogsafe MCP server (Clerk sign-in) or SCHOLAR_API_KEY.
 ---
 
 # Scholar
@@ -20,23 +21,47 @@ Mogsafe (`https://mogsafe.sruon.dev`) archives retail captures. Scholar
 queries and read-only SQL across them. Lens (`https://lens.sruon.dev`) shows a capture's
 packets in a browser.
 
-## A link: get the page's data
+## First: the MCP server
 
-Mogsafe's pages are a JavaScript shell: a plain fetch of `/mobs/103/Goblin%20Leecher` returns
-73 KB of HTML and none of the mob. Do not scrape it. Run:
+SQL goes through Scholar's MCP server, which the person signs in to themselves. Check that you
+have its tools: `tables`, `query`, and `versions` from the `mogsafe` server (in Claude Code,
+`mcp__mogsafe__query`; `claude mcp get mogsafe` shows whether it is set up). If not, tell the
+person to run the command from https://mogsafe.sruon.dev/mcp-help:
 
 ```bash
-python scholar.py open "https://mogsafe.sruon.dev/mobs/103/Goblin%20Leecher" > mob.json
+claude mcp add --transport http mogsafe https://scholar.sruon.dev/mcp
 ```
 
-`open` runs the same named queries the page runs, with the page's own parameters, and prints
-one JSON object. Explore pages give `{"page", "data": [{"query", "params", "rows", "truncated"}]}`,
-each row an object. List pages answer hundreds of rows: send them to a file and filter there.
-A `?q=` on a list page filters in the browser; `open` returns every row. A mob page's rows hold
-ids: its `bestiary_names` rows (`kind` of `skill`, `spell`, or `item`, `id`, `name`) name them, in
-the release the page names (`kind` `release`), as the page does.
+Then they start a new session, because a running one does not see the new server. The first
+call opens Clerk's sign-in in their browser (GitHub or Discord), and they approve it there. The
+tools are `tables` (every table and column, with what each means: read it first), `query` (one
+read-only ClickHouse query: 10,000 rows, 60 s), and `versions`. Page data needs none of this.
 
-| Link | What `open` asks | Key |
+## A link
+
+Mogsafe's pages are a JavaScript shell: a plain fetch of `/mobs/103/Goblin%20Leecher` returns
+73 KB of HTML and none of the mob. Do not scrape it.
+
+```bash
+python scholar.py open "https://mogsafe.sruon.dev/mobs/103/Goblin%20Leecher" > mob.json   # the page's data, no sign-in
+python scholar.py sql "https://mogsafe.sruon.dev/mobs/103/Goblin%20Leecher"               # the same, as SQL for query
+```
+
+`open` runs the named queries the page runs, with the page's own parameters, and prints one JSON
+object. Explore pages give `{"page", "data": [{"query", "params", "rows", "truncated"}]}`, each row
+an object. List pages answer hundreds of rows: send them to a file and filter there. A `?q=` on a
+list page filters in the browser; `open` returns every row. A mob page's rows hold ids: its
+`bestiary_names` rows (`kind` of `skill`, `spell`, or `item`, `id`, `name`) name them, in the
+release the page names (`kind` `release`), as the page does.
+
+`sql` prints each of those named queries' SQL, the page's values filled in, under a `-- name`
+line. Send one to the MCP `query` tool as it is, or change it: pick columns, add a `WHERE`, join
+another table. It reads Scholar's own queries from `https://scholar.sruon.dev/static/queries.json`
+and the Explore pages' from `ffxi-dev/extractors` (`ffxi_extractors/sql/pages/<name>.sql` on
+`main`). If one fails on a column Scholar lacks, `main` is ahead of the deployed Scholar: use `open`.
+The capture list, `/c/` and timelines are Mogsafe's own JSON, which only `open` reads.
+
+| Link | What the page runs | Sign-in |
 | --- | --- | --- |
 | `/captures/<id>`, a capture or a /cap session | Mogsafe `GET /v1/web/captures/<id>`, then Scholar `page?id=<recording id>`: the capture view's stored parts (`fights`, `drops`, `zones`, `party`, `events`, ...). For a session, `session_range` gives its packets in the recording. | no |
 | `/captures`, `/` | Mogsafe `GET /v1/web/captures` with the page's `name`, `character`, `by`, `state`; `next` pages with `before=` | no |
@@ -52,17 +77,15 @@ the release the page names (`kind` `release`), as the page does.
 | `/weather`, `/weather/<zone>` | `weather_zones`, `weather_next`; `weather_zone` with `zone` | no |
 | `/npcs`, `/npcs/<zone>` | `npc_zones`; `npc_zone`, `npc_zone_trades`, `npc_zone_shops` with `zone` | no |
 | `/shops`, `/shops/<zone>/<name>` | `shop_npcs`; for one NPC, its `shop_npcs` row and its `npc_zone_shops` rows | no |
-| `/search?kind=&q=&mob=&character=&from=&to=` | Scholar `GET /v1/search`, `from` and `to` as Unix ms | yes |
-| `/gaps` (the owner's) | `gaps`, `gaps_load` | yes |
+| `/search?kind=&q=&mob=&character=&from=&to=` | Scholar `GET /v1/search` (`open` with a key). Through MCP, query the kind's table: `fights` (mob), `zone_visits` (zone), `tp_uses` (tp), `spell_results` (spell), `drops` (drop), `log_changes` (quest), `keyitems` (keyitem), joined to `captures` for the character | yes |
+| `/gaps` (the owner's) | `gaps`, `gaps_load`: `sql` for MCP, or `open` with a key | yes |
 | `/me`, `/import`, `/timeline/me`, `/link`, `/admin` | none: Mogsafe reads them only for its signed-in browser session | n/a |
 | `scholar.sruon.dev/captures/<id>`, `lens.sruon.dev/c/<id>` | the capture, as `/captures/<id>` | no |
 
 One named query on its own: `python scholar.py named bestiary_mob zone=103 "name=Goblin Leecher"`.
 Over HTTP it is `GET https://scholar.sruon.dev/v1/queries/<name>?<params>`, which answers
-`{"columns", "rows", "truncated"}`.
-
-Without a key, Scholar leaves out who recorded each row (`recorder`, `recorders`). With one, it
-keeps them.
+`{"columns", "rows", "truncated"}` to anyone. Without a sign-in it leaves out who recorded each
+row (`recorder`, `recorders`). MCP SQL keeps them.
 
 ## A capture's file, and Lens
 
@@ -81,24 +104,21 @@ Lens runs in a browser, so give the person its link: `https://lens.sruon.dev/c/<
 with `?session=<name>` to open at a /cap session and `#packet=<n>` to select a packet (`n` counts
 from 0 across the recording, as Scholar's `idx` does). `open` prints the link as `lens`.
 
-## Sign in
+## An API key, without MCP
 
-Page data needs nothing. SQL, search, the gaps, and who recorded each row need the person's
-Vault account, through either:
+For scripted SQL, search, and gaps outside MCP, `scholar.py` takes a key. The person signs in at
+https://scholar.sruon.dev/keys and makes one (`ak_...`), then sets `SCHOLAR_API_KEY` where the
+agent's shell sees it: in Claude Code, `"env": {"SCHOLAR_API_KEY": "ak_..."}` in
+`~/.claude/settings.json`; elsewhere an `export` in the shell profile. `scholar.py` sends it as
+`Authorization: Bearer <key>`; with it set, `open` also gets the recorder columns.
 
-- **MCP, through Clerk sign-in.** No key. `claude mcp add --transport http scholar https://scholar.sruon.dev/mcp`,
-  then a new session; the first call opens Clerk's sign-in in the browser (GitHub or Discord).
-  Tools: `tables`, `query`, `versions`. They run SQL only, not the named queries or search.
-- **An API key**, for `scholar.py`. The person signs in at https://scholar.sruon.dev/keys and makes
-  a key (`ak_...`), then sets `SCHOLAR_API_KEY` where the agent's shell sees it: in Claude Code,
-  `"env": {"SCHOLAR_API_KEY": "ak_..."}` in `~/.claude/settings.json`; elsewhere an `export` in
-  the shell profile. Every request sends it as `Authorization: Bearer <key>`.
-
-Never print the key, put it in a command line, or write it to a file; `scholar.py` reads it from
-the environment. A `401` means the key is missing, wrong, or revoked: ask the person for a new
-one. Mogsafe itself takes no key: its own signed-in pages stay the browser's.
+Never print the key, put it in a command line, or write it to a file. A `401` means the key is
+missing, wrong, or revoked: ask the person for a new one. Mogsafe itself takes no key or MCP
+token: `/me`, `/import`, `/timeline/me`, `/link`, and `/admin` stay its browser session's.
 
 ## SQL
+
+Through MCP, call `tables`, then `query`. With a key instead:
 
 ```bash
 python scholar.py tables              # every table: what it holds, its columns, and what each means
