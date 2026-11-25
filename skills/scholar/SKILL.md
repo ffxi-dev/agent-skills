@@ -5,11 +5,11 @@ description: >
   mogsafe.sruon.dev, scholar.sruon.dev, or lens.sruon.dev link (a capture, a mob, an item, a
   recipe, a TP move, an NPC, a shop, a timeline, a /c/ download): those pages draw their data
   with JavaScript, so fetching the HTML shows nothing. `scholar.py open <link>` returns the
-  page's data, and `scholar.py sql <link>` the SQL behind it for the mogsafe MCP server's query
-  tool. Also use it to ask SQL across every capture: which mobs and NPCs appear in a zone, where
-  and how often, their HP, claims, and positions; what the recording character wore; zones
-  visited; any decoded packet field. Every packet row links to Lens, so an answer can be checked
-  against the bytes.
+  page's data, `scholar.py sql <link>` the SQL behind it for the mogsafe MCP server's query tool,
+  and `scholar.py download <link>` the capture's .xicap file to read packet by packet. Also use
+  it to ask SQL across every capture: which mobs and NPCs appear in a zone, where and how often,
+  their HP, claims, and positions; what the recording character wore; zones visited; any decoded
+  packet field. Every packet row links to Lens, so an answer can be checked against the bytes.
 license: MIT
 compatibility: Requires Python 3.9+ and network access to scholar.sruon.dev and mogsafe.sruon.dev. SQL needs the mogsafe MCP server (Clerk sign-in) or SCHOLAR_API_KEY.
 ---
@@ -63,7 +63,7 @@ The capture list, `/c/` and timelines are Mogsafe's own JSON, which only `open` 
 
 | Link | What the page runs | Sign-in |
 | --- | --- | --- |
-| `/captures/<id>`, a capture or a /cap session | Mogsafe `GET /v1/web/captures/<id>`, then Scholar `page?id=<recording id>`: the capture view's stored parts (`fights`, `drops`, `zones`, `party`, `events`, ...). For a session, `session_range` gives its packets in the recording. | no |
+| `/captures/<id>`, a capture or a /cap session | Mogsafe `GET /v1/web/captures/<id>`, then Scholar `page?id=<recording id>`: the capture view's stored parts (`fights`, `drops`, `zones`, `party`, `events`, ...), and its `download` and `lens` links. For a session, `session_range` gives its packets in the recording. | no |
 | `/captures`, `/` | Mogsafe `GET /v1/web/captures` with the page's `name`, `character`, `by`, `state`; `next` pages with `before=` | no |
 | `/c/<id>` | the download link and the Lens link; save it with `download` | no |
 | `/captures/<id>/timeline`, `/t/<code>` | the uploader's shared timeline, Mogsafe `GET /v1/web/timeline/<code>?from=&to=` for `?day=` or the latest day, as UTC | no |
@@ -87,22 +87,60 @@ Over HTTP it is `GET https://scholar.sruon.dev/v1/queries/<name>?<params>`, whic
 `{"columns", "rows", "truncated"}` to anyone. Without a sign-in it leaves out who recorded each
 row (`recorder`, `recorders`). MCP SQL keeps them.
 
-## A capture's file, and Lens
+## The capture file itself
+
+Scholar keeps decoded facts, not packets. When the answer needs the bytes, a packet Scholar
+does not decode, or a whole capture to work through, get the `.xicap` itself: it is public, and
+it is the source every Scholar row came from.
 
 ```bash
-python scholar.py download https://mogsafe.sruon.dev/c/l2DRncUnT1GS [FILE]   # or any capture or session link or id
+python scholar.py download https://mogsafe.sruon.dev/captures/4XeETdWJE-rH [FILE]   # any capture or session link, or a bare id
 ```
 
-Without `FILE` it saves to the current directory under Mogsafe's name, `<character>_<id>.xicap`.
+Any Scholar row's `capture_id` works too. Without `FILE` it saves to the current directory under
+Mogsafe's name, `<character>_<recording id>.xicap`. `/c/<id>` redirects to a signed R2 link that
+lasts 15 minutes. A session's id gives its whole recording: `open` on the session's link gives
+`session_range`, its first and last packet. A capture still recording downloads only for its
+uploader.
 
-`/c/<id>` is public. An archived capture redirects to a signed R2 link that lasts 15 minutes; a
-session's id gives its whole recording. A capture still recording downloads only for its
-uploader. The file is xicap: read it with xicap's reader (`ffxi-dev/xicap`), or the
-`ffxi-packets` skill for captain logs, never by hand.
+Read it with xicap's reader, never by hand, and decode packets with `ffxi-dev/packets`. Both run
+in Node 17 or later with no compiler:
 
-Lens runs in a browser, so give the person its link: `https://lens.sruon.dev/c/<recording id>`,
-with `?session=<name>` to open at a /cap session and `#packet=<n>` to select a packet (`n` counts
-from 0 across the recording, as Scholar's `idx` does). `open` prints the link as `lens`.
+```bash
+npm i @ffxi-dev/xicap@7.5.0 github:ffxi-dev/packets#v2.2.0
+node decode.mjs capture.xicap 0 0x00E 10069 21626   # direction (0 to the client, 1 from it), opcode, packet range
+```
+
+```js
+// decode.mjs: one JSON line per matching packet, its fields as Lens shows them.
+import { readFileSync } from "node:fs";
+import { Reader } from "@ffxi-dev/xicap";
+import { decodePacket, fields, lookup, setSchemas } from "@ffxi-dev/packets";
+
+const json = (n) => JSON.parse(readFileSync(`node_modules/@ffxi-dev/packets/schemas/${n}.json`, "utf8"));
+setSchemas({ s2c: json("s2c"), c2s: json("c2s"), layouts: json("layouts") });
+const [file, dir, op, from = 0, to = Infinity] = process.argv.slice(2);
+const r = await Reader.open(readFileSync(file));
+let idx = 0; // counts every packet from 0, as Scholar's idx and Lens's #packet= do
+for (const p of r) {
+  // channel 0 is the game; bit 0 of flags is the direction
+  if (idx >= from && idx <= to && p.channel === 0 && (p.flags & 1) === +dir && p.opcode === +op) {
+    const layout = lookup(+dir, +op, r.metadata.clientVersion);
+    const out = layout ? fields(decodePacket(p.data, layout, +dir, +op)) : { hex: Buffer.from(p.data).toString("hex") };
+    console.log(JSON.stringify({ idx, ts: p.timestamp, ...out }));
+  }
+  idx++;
+}
+r.close();
+```
+
+`r.metadata` holds the client version, character, and world; a packet's `markers` hold its /cap
+session marks. A field's path follows `ffxi-dev/packets` (`UniqueNo`, `SendFlg.Position`). The
+`ffxi-packets` skill reads captain's text logs, not xicap.
+
+Lens shows a capture in a browser, so give the person its link:
+`https://lens.sruon.dev/c/<recording id>`, with `?session=<name>` to open at a /cap session and
+`#packet=<idx>` to select a packet. `open` and `download` print it.
 
 ## An API key, without MCP
 
