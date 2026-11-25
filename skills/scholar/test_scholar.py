@@ -41,7 +41,7 @@ class Fake(BaseHTTPRequestHandler):
         if path.startswith("/c/"):
             data = b"XICAP" * 10
             self.send_response(200)
-            self.send_header("Content-Disposition", 'attachment; filename="Metur_rec1.xicap"')
+            self.send_header("Content-Disposition", 'attachment; filename="Char_rec1.xicap"')
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -119,8 +119,10 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as d:
         os.chdir(d)
-        assert "Metur_rec1.xicap (50 bytes)" in run("download", "https://mogsafe.sruon.dev/captures/ses1")
-        assert open("Metur_rec1.xicap", "rb").read() == b"XICAP" * 10
+        assert "Char_rec1.xicap (50 bytes)" in run("download", "https://mogsafe.sruon.dev/captures/ses1")
+        assert open("Char_rec1.xicap", "rb").read() == b"XICAP" * 10
+        assert run("download", "https://mogsafe.sruon.dev/c/rec1", "--help").startswith("Ask Scholar")
+        assert os.listdir(".") == ["Char_rec1.xicap"], "an option is never a file name"
         os.chdir(HERE)
     assert all(a == "Bearer ak_test" for m, p, a in SEEN if p.startswith("/v1/queries/")), "a key, when set, goes along"
 

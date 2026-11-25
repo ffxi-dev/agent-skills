@@ -32,7 +32,9 @@ python scholar.py open "https://mogsafe.sruon.dev/mobs/103/Goblin%20Leecher" > m
 `open` runs the same named queries the page runs, with the page's own parameters, and prints
 one JSON object. Explore pages give `{"page", "data": [{"query", "params", "rows", "truncated"}]}`,
 each row an object. List pages answer hundreds of rows: send them to a file and filter there.
-A `?q=` on a list page filters in the browser; `open` returns every row.
+A `?q=` on a list page filters in the browser; `open` returns every row. A mob page's rows hold
+ids: its `bestiary_names` rows (`kind` of `skill`, `spell`, or `item`, `id`, `name`) name them, in
+the release the page names (`kind` `release`), as the page does.
 
 | Link | What `open` asks | Key |
 | --- | --- | --- |
@@ -65,8 +67,10 @@ keeps them.
 ## A capture's file, and Lens
 
 ```bash
-python scholar.py download https://mogsafe.sruon.dev/c/l2DRncUnT1GS   # or any capture or session link or id
+python scholar.py download https://mogsafe.sruon.dev/c/l2DRncUnT1GS [FILE]   # or any capture or session link or id
 ```
+
+Without `FILE` it saves to the current directory under Mogsafe's name, `<character>_<id>.xicap`.
 
 `/c/<id>` is public. An archived capture redirects to a signed R2 link that lasts 15 minutes; a
 session's id gives its whole recording. A capture still recording downloads only for its

@@ -232,8 +232,8 @@ def table(columns: list[str], rows: list[list[Any]]) -> str:
 
 def main(argv: list[str]) -> int:
     commands = ("open", "download", "named", "tables", "versions", "query")
-    if not argv or argv[0] not in commands:
-        print(__doc__)
+    if not argv or argv[0] not in commands or any(a.startswith("-") for a in argv[1:2] + argv[2:3]):
+        print(__doc__)  # an option such as --help is no URL or file name
         return 2
     if argv[0] in ("open", "download", "named", "query") and len(argv) < 2:
         raise SystemExit(f"{argv[0]} needs an argument: see python scholar.py")
