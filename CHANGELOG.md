@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/ffxi-dev/agent-skills/compare/v0.8.0...v0.9.0) (2026-11-27)
+
+
+### Features
+
+* scholar reads any Mogsafe link: page data, SQL for MCP, and the .xicap itself ([#11](https://github.com/ffxi-dev/agent-skills/issues/11)) ([d93fdcc](https://github.com/ffxi-dev/agent-skills/commit/d93fdcc54e2be07417c20df0f1de4c3b23cdd643))
+
 ## [0.8.0](https://github.com/ffxi-dev/agent-skills/compare/v0.7.0...v0.8.0) (2026-11-01)
 
 
